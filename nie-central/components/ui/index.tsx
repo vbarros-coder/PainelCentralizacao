@@ -80,13 +80,13 @@ export function Button({
 // CARD
 // ============================================
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
   isHoverable?: boolean;
 }
 
-export function Card({ children, className, isHoverable = false }: CardProps) {
+export function Card({ children, className, isHoverable = false, ...props }: CardProps) {
   return (
     <div
       className={cn(
@@ -95,6 +95,7 @@ export function Card({ children, className, isHoverable = false }: CardProps) {
         isHoverable && 'hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer',
         className
       )}
+      {...props}
     >
       {children}
     </div>

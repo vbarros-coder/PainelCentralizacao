@@ -7,9 +7,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // Configuração para Vercel (Híbrido por padrão)
-  // Se quiser manter export estático na Vercel, mantenha a linha abaixo. 
-  // Caso queira usar recursos de servidor da Vercel (como API Routes), remova 'output: export'.
-  output: 'export',
+  // Remova 'output: export' se precisar de SSR ou API Routes reais no futuro.
+  output: 'standalone',
   
   // Security Headers
   async headers() {
@@ -48,7 +47,12 @@ const nextConfig: NextConfig = {
 
   // Image optimization
   images: {
-    domains: ['api.dicebear.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
   },
 
@@ -63,11 +67,8 @@ const nextConfig: NextConfig = {
   // Turbopack root fix
   // @ts-ignore
   turbopack: {
-    root: '.',
+    root: './',
   },
-
-  // Output
-  output: 'standalone',
 };
 
 export default nextConfig;
