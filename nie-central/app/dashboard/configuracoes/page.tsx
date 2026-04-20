@@ -13,6 +13,7 @@ import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button, Avatar } from '@/components/ui';
 import { useAuth } from '@/features/auth/auth-context';
 import { cn } from '@/lib/utils';
+import { PROFILE_LABELS } from '@/lib/mock-data';
 
 function ConfiguracoesContent() {
   const { user, updateUser } = useAuth();
@@ -114,9 +115,7 @@ function ConfiguracoesContent() {
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400">{user?.email}</p>
                 <p className="text-sm text-[#00A651] mt-1">
-                  {user?.profile === 'admin' && 'Administrador'}
-                  {user?.profile === 'diretor' && 'Diretor'}
-                  {user?.profile === 'usuario' && 'Usuário'}
+                  {user?.profile && PROFILE_LABELS[user.profile]}
                 </p>
                 
                 <p className="text-xs text-gray-400 mt-2">
@@ -131,96 +130,69 @@ function ConfiguracoesContent() {
           </Card>
         </motion.div>
 
-        {/* Aparência */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-[#00A651]/10 flex items-center justify-center">
-                {mounted && resolvedTheme === 'dark' ? (
-                  <Moon className="w-5 h-5 text-[#00A651]" />
-                ) : (
-                  <Sun className="w-5 h-5 text-[#00A651]" />
-                )}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-[#00A651]/10 flex items-center justify-center">
+                  {mounted && resolvedTheme === 'dark' ? (
+                    <Moon className="w-5 h-5 text-[#00A651]" />
+                  ) : (
+                    <Sun className="w-5 h-5 text-[#00A651]" />
+                  )}
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Aparência</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Escolha o tema da interface</p>
+                </div>
               </div>
-              
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Aparência</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Escolha o tema da interface</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={cn(
+                    'p-4 rounded-xl border-2 transition-all text-left',
+                    resolvedTheme === 'light'
+                      ? 'border-[#00A651] bg-[#00A651]/5'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                  )}
+                >
+                  <Sun className="w-6 h-6 mb-2 text-[#F47920]" />
+                  <p className="font-medium text-gray-900 dark:text-white">Claro</p>
+                </button>
+
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={cn(
+                    'p-4 rounded-xl border-2 transition-all text-left',
+                    resolvedTheme === 'dark'
+                      ? 'border-[#00A651] bg-[#00A651]/5'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                  )}
+                >
+                  <Moon className="w-6 h-6 mb-2 text-[#0055A4]" />
+                  <p className="font-medium text-gray-900 dark:text-white">Escuro</p>
+                </button>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setTheme('light')}
-                className={cn(
-                  'p-4 rounded-xl border-2 transition-all text-left',
-                  resolvedTheme === 'light'
-                    ? 'border-[#00A651] bg-[#00A651]/5'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                )}
-              >
-                <Sun className="w-6 h-6 mb-2 text-[#F47920]" />
-                <p className="font-medium text-gray-900 dark:text-white">Claro</p>
-              </button>
-
-              <button
-                onClick={() => setTheme('dark')}
-                className={cn(
-                  'p-4 rounded-xl border-2 transition-all text-left',
-                  resolvedTheme === 'dark'
-                    ? 'border-[#00A651] bg-[#00A651]/5'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                )}
-              >
-                <Moon className="w-6 h-6 mb-2 text-[#0055A4]" />
-                <p className="font-medium text-gray-900 dark:text-white">Escuro</p>
-              </button>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Tema */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Moon className="w-5 h-5 text-[#00A651]" />
-              Aparência
-            </h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">Modo Escuro</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Alternar entre tema claro e escuro</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Modo Escuro</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Alternar entre tema claro e escuro</p>
+                </div>
+                
+                <button
+                  onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                  className={cn(
+                    'w-12 h-6 rounded-full transition-colors relative',
+                    resolvedTheme === 'dark' ? 'bg-[#00A651]' : 'bg-gray-300'
+                  )}
+                >
+                  <div className={cn(
+                    'w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm',
+                    resolvedTheme === 'dark' ? 'left-6' : 'left-0.5'
+                  )} />
+                </button>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                className="gap-2"
-              >
-                {mounted && resolvedTheme === 'dark' ? (
-                  <>
-                    <Sun className="w-4 h-4" />
-                    Modo Claro
-                  </>
-                ) : (
-                  <>
-                    <Moon className="w-4 h-4" />
-                    Modo Escuro
-                  </>
-                )}
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
+            </Card>
+          </motion.div>
 
         {/* Notificações */}
         <motion.div
@@ -230,52 +202,92 @@ function ConfiguracoesContent() {
           className="mb-6"
         >
           <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-[#0055A4]/10 flex items-center justify-center">
                 <Bell className="w-5 h-5 text-[#0055A4]" />
               </div>
               
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">Notificações</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Configure suas preferências</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie seus alertas</p>
               </div>
             </div>
 
             <div className="space-y-4">
               {[
-                { key: 'email', label: 'Notificações por email', icon: Mail },
-                { key: 'push', label: 'Notificações push', icon: Bell },
-                { key: 'updates', label: 'Atualizações do sistema', icon: Shield },
+                { id: 'email', label: 'Alertas por Email', desc: 'Receber atualizações de projetos no email' },
+                { id: 'push', label: 'Notificações Push', desc: 'Alertas em tempo real no navegador' },
+                { id: 'updates', label: 'Novidades do Sistema', desc: 'Informações sobre novas funcionalidades' },
               ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+                <div key={item.id} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{item.label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
                   </div>
                   
                   <button
-                    onClick={() => setNotifications(prev => ({
-                      ...prev,
-                      [item.key]: !prev[item.key as keyof typeof prev]
-                    }))}
+                    onClick={() => setNotifications(prev => ({ ...prev, [item.id]: !prev[item.id as keyof typeof prev] }))}
                     className={cn(
-                      'w-12 h-6 rounded-full transition-colors relative',
-                      notifications[item.key as keyof typeof notifications]
-                        ? 'bg-[#00A651]'
-                        : 'bg-gray-300 dark:bg-gray-700'
+                      'w-10 h-5 rounded-full transition-colors relative',
+                      notifications[item.id as keyof typeof notifications] ? 'bg-[#0055A4]' : 'bg-gray-300'
                     )}
                   >
-                    <span
-                      className={cn(
-                        'absolute top-1 w-4 h-4 rounded-full bg-white transition-transform',
-                        notifications[item.key as keyof typeof notifications]
-                          ? 'translate-x-7'
-                          : 'translate-x-1'
-                      )}
-                    />
+                    <div className={cn(
+                      'w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow-sm',
+                      notifications[item.id as keyof typeof notifications] ? 'left-5.5' : 'left-0.5'
+                    )} />
                   </button>
                 </div>
               ))}
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Segurança */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-8"
+        >
+          <Card className="p-6 border-red-100 dark:border-red-900/30">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-red-600" />
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Segurança</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Gerenciamento de conta</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Senha de Acesso</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Recomendamos trocar a senha a cada 90 dias</p>
+                </div>
+                <Button variant="outline" size="sm">Alterar Senha</Button>
+              </div>
+              
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-red-600 text-sm">Encerrar Sessão</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Sair de todos os dispositivos conectados</p>
+                </div>
+                <Button 
+                  variant="danger" 
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('Deseja realmente sair?')) {
+                      window.location.href = '/login';
+                    }
+                  }}
+                >
+                  Sair do Sistema
+                </Button>
+              </div>
             </div>
           </Card>
         </motion.div>

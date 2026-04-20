@@ -16,6 +16,7 @@ function RelatoriosContent() {
   const [downloading, setDownloading] = useState<string | null>(null);
 
   const handleDownload = (name: string) => {
+    if (typeof window === 'undefined') return;
     setDownloading(name);
     
     // Simular geração e download de PDF/Excel

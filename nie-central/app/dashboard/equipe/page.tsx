@@ -53,10 +53,12 @@ function EquipeContent() {
                     <div className="flex items-center gap-2 mt-1">
                       <User className="w-4 h-4 text-gray-400" />
                       <span className={cn(
-                        'text-sm px-2 py-0.5 rounded-full',
+                        'text-[11px] font-bold px-2 py-0.5 rounded-full uppercase',
+                        user.profile === 'master_admin' && 'bg-red-100 text-red-600',
                         user.profile === 'admin' && 'bg-[#F47920]/10 text-[#F47920]',
-                        user.profile === 'diretor' && 'bg-[#0055A4]/10 text-[#0055A4]',
-                        user.profile === 'usuario' && 'bg-[#00A651]/10 text-[#00A651]'
+                        user.profile === 'executivo' && 'bg-blue-100 text-blue-600',
+                        user.profile === 'diretoria' && 'bg-indigo-100 text-indigo-600',
+                        user.profile === 'usuario' && 'bg-green-100 text-green-600'
                       )}>
                         {PROFILE_LABELS[user.profile]}
                       </span>
