@@ -15,6 +15,11 @@ import { useState } from 'react';
 function RelatoriosContent() {
   const [downloading, setDownloading] = useState<string | null>(null);
 
+  // Lógica para obter o mês e ano atual dinamicamente
+  const currentDate = new Date();
+  const currentMonthYear = currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  const formattedMonthYear = currentMonthYear.charAt(0).toUpperCase() + currentMonthYear.slice(1);
+
   const handleDownload = (name: string) => {
     if (typeof window === 'undefined') return;
     setDownloading(name);
@@ -106,38 +111,47 @@ function RelatoriosContent() {
             Relatórios Disponíveis
           </h2>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { name: 'Relatório de Projetos', desc: 'Visão geral de todos os projetos', date: 'Dezembro 2026' },
-              { name: 'Relatório de Atividades', desc: 'Atividades realizadas no período', date: 'Novembro 2026' },
-              { name: 'Relatório de Performance', desc: 'Indicadores de performance', date: 'Outubro 2026' },
+              { name: 'Relatório de Projetos', desc: 'Visão geral de todos os projetos', date: formattedMonthYear },
+              { name: 'Relatório de Atividades', desc: 'Atividades realizadas no período', date: formattedMonthYear },
+              { name: 'Relatório de Performance', desc: 'Indicadores de performance', date: formattedMonthYear },
             ].map((rel, index) => (
-              <Card key={rel.name} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#0055A4]/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-[#0055A4]" />
+              <motion.div
+                key={rel.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+              >
+                <Card className="p-6 h-full flex flex-col relative overflow-hidden">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#0055A4]/10 flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-[#0055A4]" />
+                    </div>
                   </div>
-                  
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{rel.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{rel.desc}</p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-400">{rel.date}</span>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    leftIcon={<Download className="w-4 h-4" />}
-                    isLoading={downloading === rel.name}
-                    onClick={() => handleDownload(rel.name)}
-                  >
-                    Baixar
-                  </Button>
-                </div>
-              </Card>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                    {rel.name}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 flex-1">
+                    {rel.desc}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <span className="text-sm font-medium text-gray-400">{rel.date}</span>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      leftIcon={<Download className="w-4 h-4" />}
+                      isLoading={downloading === rel.name}
+                      onClick={() => handleDownload(rel.name)}
+                    >
+                      Baixar
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </motion.div>
