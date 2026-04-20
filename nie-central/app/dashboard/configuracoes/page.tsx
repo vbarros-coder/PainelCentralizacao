@@ -130,69 +130,78 @@ function ConfiguracoesContent() {
           </Card>
         </motion.div>
 
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-[#00A651]/10 flex items-center justify-center">
-                  {mounted && resolvedTheme === 'dark' ? (
-                    <Moon className="w-5 h-5 text-[#00A651]" />
-                  ) : (
-                    <Sun className="w-5 h-5 text-[#00A651]" />
-                  )}
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Aparência</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Escolha o tema da interface</p>
-                </div>
+        {/* Aparência */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#00A651]/10 flex items-center justify-center">
+                {mounted && resolvedTheme === 'dark' ? (
+                  <Moon className="w-5 h-5 text-[#00A651]" />
+                ) : (
+                  <Sun className="w-5 h-5 text-[#00A651]" />
+                )}
               </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Aparência</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Escolha o tema da interface</p>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => setTheme('light')}
-                  className={cn(
-                    'p-4 rounded-xl border-2 transition-all text-left',
-                    resolvedTheme === 'light'
-                      ? 'border-[#00A651] bg-[#00A651]/5'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                  )}
-                >
-                  <Sun className="w-6 h-6 mb-2 text-[#F47920]" />
-                  <p className="font-medium text-gray-900 dark:text-white">Claro</p>
-                </button>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <button
+                onClick={() => setTheme('light')}
+                className={cn(
+                  'p-4 rounded-xl border-2 transition-all text-left',
+                  resolvedTheme === 'light'
+                    ? 'border-[#00A651] bg-[#00A651]/5'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                )}
+              >
+                <Sun className="w-6 h-6 mb-2 text-[#F47920]" />
+                <p className="font-medium text-gray-900 dark:text-white">Claro</p>
+              </button>
 
-                <button
-                  onClick={() => setTheme('dark')}
-                  className={cn(
-                    'p-4 rounded-xl border-2 transition-all text-left',
-                    resolvedTheme === 'dark'
-                      ? 'border-[#00A651] bg-[#00A651]/5'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                  )}
-                >
-                  <Moon className="w-6 h-6 mb-2 text-[#0055A4]" />
-                  <p className="font-medium text-gray-900 dark:text-white">Escuro</p>
-                </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={cn(
+                  'p-4 rounded-xl border-2 transition-all text-left',
+                  resolvedTheme === 'dark'
+                    ? 'border-[#00A651] bg-[#00A651]/5'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                )}
+              >
+                <Moon className="w-6 h-6 mb-2 text-[#0055A4]" />
+                <p className="font-medium text-gray-900 dark:text-white">Escuro</p>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">Modo Escuro</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Alternar entre tema claro e escuro</p>
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Modo Escuro</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Alternar entre tema claro e escuro</p>
-                </div>
-                
-                <button
-                  onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                  className={cn(
-                    'w-12 h-6 rounded-full transition-colors relative',
-                    resolvedTheme === 'dark' ? 'bg-[#00A651]' : 'bg-gray-300'
-                  )}
-                >
-                  <div className={cn(
-                    'w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm',
-                    resolvedTheme === 'dark' ? 'left-6' : 'left-0.5'
-                  )} />
-                </button>
-              </div>
-            </Card>
-          </motion.div>
+              
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className={cn(
+                  'w-12 h-6 rounded-full transition-colors relative',
+                  resolvedTheme === 'dark' ? 'bg-[#00A651]' : 'bg-gray-300'
+                )}
+              >
+                <div className={cn(
+                  'w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm',
+                  resolvedTheme === 'dark' ? 'left-6' : 'left-0.5'
+                )} />
+              </button>
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Notificações */}
         <motion.div
