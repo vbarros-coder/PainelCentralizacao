@@ -139,12 +139,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
       const userPrefs = localStorage.getItem(USER_PREFERENCES_KEY);
       const preferences = userPrefs ? JSON.parse(userPrefs) : {};
+      const centralStorage = localStorage.getItem('nie_central_users_v1');
+      const centralUsers = centralStorage ? JSON.parse(centralStorage) : {};
 
       if (stored) {
         const session: AuthSession = JSON.parse(stored);
         
-        // Aplicar preferências persistentes (como avatar) se existirem para este usuário
-        if (session.user && preferences[session.user.email]) {
+        // PRIORIDADE: Buscar do armazenamento central para garantir foto atualizada
+        if (session.user && centralUsers[session.user.email]) {
+          session.user = { ...session.user, ...centralUsers[session.user.email] };
+        }
+        // Fallback para preferências se não estiver no central (cache local)
+        else if (session.user && preferences[session.user.email]) {
           session.user = { ...session.user, ...preferences[session.user.email] };
         }
 
@@ -220,8 +226,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Simular delay de rede (proteção contra timing attacks)
     await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 500));
 
-    // Buscar usuário
-    const user = usersDb.find((u) => u.email.toLowerCase() === email);
+    // Buscar usuário no Banco de Dados simulado atualizado
+    const centralStorage = isClient() ? localStorage.getItem('nie_central_users_v1') : null;
+    const centralUsers = centralStorage ? JSON.parse(centralStorage) : {};
+    
+    let user = usersDb.find((u) => u.email.toLowerCase() === email);
+    
+    // Se existir no armazenamento central (com foto nova, etc), usar esse
+    if (centralUsers[email]) {
+      user = centralUsers[email];
+    }
     
     if (!user) {
       incrementLoginAttempt(email);
@@ -411,6 +425,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session.user = updatedUser;
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
       }
+
+      // IMPORTANTE: Persistir permanentemente no localStorage central
+      // para que a foto apareça mesmo em outros navegadores (simulado)
+      // ou após logout/login.
+      const centralStorage = localStorage.getItem('nie_central_users_v1');
+      const centralUsers = centralStorage ? JSON.parse(centralStorage) : {};
+      centralUsers[updatedUser.email] = updatedUser;
+      localStorage.setItem('nie_central_users_v1', JSON.stringify(centralUsers));
 
       // Atualizar preferências permanentes do usuário
       const userPrefs = localStorage.getItem(USER_PREFERENCES_KEY);

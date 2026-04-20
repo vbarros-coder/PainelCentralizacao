@@ -60,6 +60,8 @@ function AdminContent() {
 
   // Admin Cards
   const adminItems = useMemo(() => {
+    const newUsersCount = allUsers.filter(u => u.isNew).length;
+    
     const items = [
       { 
         title: 'Usuários', 
@@ -67,7 +69,7 @@ function AdminContent() {
         icon: Users, 
         color: '#00A651',
         action: 'Gerenciar',
-        badge: allUsers.filter(u => u.isNew).length > 0 ? `${allUsers.filter(u => u.isNew).length} novos` : null,
+        badge: newUsersCount > 0 ? `${newUsersCount} novos` : null,
         restricted: false
       },
       { 
@@ -88,7 +90,7 @@ function AdminContent() {
       },
       { 
         title: 'Logs', 
-        desc: 'Auditoria de ações e eventos', 
+        desc: `${logs.length} eventos registrados`, 
         icon: Activity, 
         color: '#00A651',
         action: 'Visualizar',
@@ -106,7 +108,7 @@ function AdminContent() {
 
     // Se não for super admin, remove os itens restritos
     return items.filter(item => !item.restricted || superAdmin);
-  }, [allUsers, superAdmin]);
+  }, [allUsers, superAdmin, logs]);
 
   // Modal Components
   const Modal = ({ title, isOpen, onClose, children, icon: Icon, color }: any) => (
@@ -215,7 +217,12 @@ function AdminContent() {
                 <Button 
                   variant={item.restricted ? "primary" : "outline"}
                   size="sm" 
-                  className={cn("w-full", item.restricted && "bg-[#0055A4] hover:bg-[#004488]")}
+                  className={cn(
+                    "w-full transition-all duration-300 font-bold",
+                    item.restricted 
+                      ? "bg-[#0055A4] hover:bg-[#004488] text-white border-transparent" 
+                      : "text-[#0055A4] border-[#0055A4] hover:bg-[#0055A4]/5"
+                  )}
                   isLoading={executing === item.title}
                   onClick={() => handleAction(item)}
                 >
