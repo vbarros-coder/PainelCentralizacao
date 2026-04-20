@@ -7,6 +7,7 @@
 
 import { motion } from 'framer-motion';
 import { BarChart3, FileText, Download, TrendingUp, Users, FolderKanban } from 'lucide-react';
+import { ProtectedRoute } from '@/features/auth/protected-route';
 import { useAuth } from '@/features/auth/auth-context';
 import { Card, Button } from '@/components/ui';
 import { MOCK_PROJECTS } from '@/lib/mock-data';
