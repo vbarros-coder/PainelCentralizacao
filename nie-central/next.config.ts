@@ -6,9 +6,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Output mode for Cloudflare Pages (Static Export)
+  // Configuração para Vercel (Híbrido por padrão)
+  // Se quiser manter export estático na Vercel, mantenha a linha abaixo. 
+  // Caso queira usar recursos de servidor da Vercel (como API Routes), remova 'output: export'.
   output: 'export',
-  distDir: 'out',
   
   // Security Headers
   async headers() {
