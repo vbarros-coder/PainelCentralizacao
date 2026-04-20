@@ -49,7 +49,6 @@ interface AuthContextType extends AuthState {
   updateUser: (updates: Partial<User>) => void;
   getAllUsers: () => User[];
   updateUserAdmin: (userId: string, updates: Partial<User>) => void;
-  isSuperAdmin: () => boolean;
   logAction: (action: string, category: string, details?: string, overrideUser?: User) => void;
   getLogs: () => any[];
   performBackup: () => Promise<{ success: boolean; date: string }>;
