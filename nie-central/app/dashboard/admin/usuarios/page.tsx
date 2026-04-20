@@ -29,12 +29,14 @@ import {
 import { useAuth } from '@/features/auth/auth-context';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button, Avatar } from '@/components/ui';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { PROFILE_LABELS } from '@/lib/mock-data';
 import { User, UserProfile, UserStatus } from '@/types';
 
 function UsuariosCadastradosContent() {
-  const { getAllUsers, updateUserAdmin, user: currentUser } = useAuth();
+  const { getAllUsers, updateUserAdmin, user: currentUser, isSuperAdmin } = useAuth();
+  const { showToast } = useToast();
   const allUsers = getAllUsers();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,10 +70,12 @@ function UsuariosCadastradosContent() {
 
   const handleApprove = (userId: string) => {
     updateUserAdmin(userId, { status: 'ativo', isNew: false });
+    showToast('Usuário aprovado com sucesso!', 'success');
   };
 
   const handleReject = (userId: string) => {
     updateUserAdmin(userId, { status: 'inativo', isNew: false });
+    showToast('Usuário recusado.', 'info');
   };
 
   const handleMarkAsSeen = (userId: string) => {
@@ -80,16 +84,11 @@ function UsuariosCadastradosContent() {
 
   const handleChangeProfile = (userId: string, newProfile: UserProfile) => {
     updateUserAdmin(userId, { profile: newProfile });
+    showToast(`Perfil atualizado para ${PROFILE_LABELS[newProfile]}`, 'success');
     setEditingUserId(null);
   };
 
-  const AUTHORIZED_EMAILS = [
-    'admin@addvalora.com',
-    'wfernandez@addvaloraglobal.com',
-    'lhey@addvaloraglobal.com'
-  ];
-
-  const canEdit = currentUser && AUTHORIZED_EMAILS.includes(currentUser.email.toLowerCase());
+  const canEdit = isSuperAdmin();
 
   return (
     <div className="min-h-screen bg-transparent p-6">

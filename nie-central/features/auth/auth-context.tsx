@@ -47,6 +47,10 @@ interface AuthContextType extends AuthState {
   updateUser: (updates: Partial<User>) => void;
   getAllUsers: () => User[];
   updateUserAdmin: (userId: string, updates: Partial<User>) => void;
+  isSuperAdmin: () => boolean;
+  logAction: (action: string, category: string, details?: string, overrideUser?: User) => void;
+  getLogs: () => any[];
+  performBackup: () => Promise<{ success: boolean; date: string }>;
   isLoading: boolean;
 }
 
@@ -76,13 +80,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loginAttempts, setLoginAttempts] = useState<Record<string, LoginAttempt>>({});
   const [usersDb, setUsersDb] = useState<User[]>([]);
   const [passwordsDb, setPasswordsDb] = useState<Record<string, string>>({});
+  const [logs, setLogs] = useState<any[]>([]);
 
-  // Inicializar "Banco de Dados" simulado
+  // Constante de emails autorizados (Whitelist nominal e técnica)
+  const AUTHORIZED_USERS = [
+    'admin@addvalora.com',
+    'admin@nie.gov.br',
+    'wfernandez@addvaloraglobal.com',
+    'lhey@addvaloraglobal.com',
+    'luciana.hey@addvaloraglobal.com',
+    'luciana.campos@addvaloraglobal.com'
+  ];
+
+  const AUTHORIZED_NAMES = [
+    'ADM NIE',
+    'William Fernandez',
+    'Luciana de Campos Correia Hey',
+    'Luciana Hey',
+    'Lu Hey',
+    'Lhey',
+    'W. Fernandez'
+  ];
+
+  // Inicializar "Banco de Dados" simulado e Logs
   useEffect(() => {
     if (!isClient()) return;
     
     const storedUsers = localStorage.getItem(USERS_DB_KEY);
     const storedPasswords = localStorage.getItem('nie_passwords_db_v1');
+    const storedLogs = localStorage.getItem('nie_logs_v1');
     
     if (storedUsers) {
       setUsersDb(JSON.parse(storedUsers));
@@ -98,6 +124,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Primeira vez, popular com MOCK_PASSWORDS
       setPasswordsDb(MOCK_PASSWORDS);
       localStorage.setItem('nie_passwords_db_v1', JSON.stringify(MOCK_PASSWORDS));
+    }
+
+    if (storedLogs) {
+      setLogs(JSON.parse(storedLogs));
     }
   }, []);
 
@@ -252,6 +282,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       error: null,
     });
 
+    logAction('Login realizado', 'AUTH', undefined, session.user);
+
     return { success: true };
   }, [loginAttempts, usersDb, passwordsDb]);
 
@@ -295,6 +327,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('nie_passwords_db_v1', JSON.stringify(newPasswordsDb));
     }
 
+    logAction('Novo cadastro realizado', 'AUTH', `Usuário: ${newUser.name} (${newUser.email})`, newUser);
+
     return { success: true };
   }, [usersDb, passwordsDb]);
 
@@ -303,6 +337,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ============================================
 
   const logout = useCallback(() => {
+    logAction('Logout realizado', 'AUTH');
     if (isClient()) {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
@@ -312,7 +347,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading: false,
       error: null,
     });
-  }, []);
+  }, [state.user]);
 
   // ============================================
   // PERMISSIONS
@@ -404,13 +439,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserAdmin = useCallback((userId: string, updates: Partial<User>) => {
     // Restrição: Apenas William, Luciana ou Admin NIE podem alterar permissões (profile) ou status
-    const AUTHORIZED_EMAILS = [
-      'admin@addvalora.com',
-      'wfernandez@addvaloraglobal.com',
-      'lhey@addvaloraglobal.com'
-    ];
-
-    if (!state.user || !AUTHORIZED_EMAILS.includes(state.user.email.toLowerCase())) {
+    if (!isSuperAdmin()) {
       console.warn('Usuário não autorizado a realizar esta ação administrativa.');
       return;
     }
@@ -439,7 +468,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
+
+    logAction(
+      `Alteração de perfil/status do usuário ID: ${userId}`,
+      'ADMIN',
+      `Atualização para: ${JSON.stringify(updates)}`
+    );
   }, [usersDb, state.user]);
+
+  // ============================================
+  // AUDIT LOGS
+  // ============================================
+
+  const logAction = useCallback((action: string, category: string, details?: string, overrideUser?: User) => {
+    const user = overrideUser || state.user;
+    if (!user) return;
+
+    const newLog = {
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      user: user.name,
+      email: user.email,
+      action,
+      category,
+      details
+    };
+
+    setLogs(prev => {
+      const updated = [newLog, ...prev].slice(0, 100); // Manter últimos 100
+      if (isClient()) {
+        localStorage.setItem('nie_logs_v1', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, [state.user]);
+
+  const getLogs = useCallback(() => {
+    return logs;
+  }, [logs]);
+
+  // ============================================
+  // BACKUP
+  // ============================================
+
+  const performBackup = useCallback(async (): Promise<{ success: boolean; date: string }> => {
+    if (!isSuperAdmin()) return { success: false, date: '' };
+
+    // Simular processamento
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const date = new Date().toLocaleString('pt-BR');
+    logAction('Backup de dados realizado', 'BACKUP', `Data: ${date}`);
+    
+    return { success: true, date };
+  }, [state.user]);
+
+  // ============================================
+  // SUPER ADMIN HELPER
+  // ============================================
+
+  const isSuperAdmin = useCallback((): boolean => {
+    if (!state.user) return false;
+
+    const emailMatch = AUTHORIZED_USERS.includes(state.user.email.toLowerCase());
+    const nameMatch = AUTHORIZED_NAMES.some(name => 
+      state.user?.name.toLowerCase().includes(name.toLowerCase())
+    );
+
+    return emailMatch || nameMatch || state.user.profile === 'master_admin';
+  }, [state.user]);
 
   // ============================================
   // HELPERS
@@ -481,6 +578,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUser,
     getAllUsers,
     updateUserAdmin,
+    isSuperAdmin,
+    logAction,
+    getLogs,
+    performBackup,
     isLoading: state.isLoading,
   };
 
