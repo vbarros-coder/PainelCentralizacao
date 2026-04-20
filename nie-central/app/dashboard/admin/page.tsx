@@ -6,7 +6,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Shield, Users, Settings, Key, Database, Activity, Search, X, Download, ShieldCheck, UserCheck, AlertCircle } from 'lucide-react';
+import { Shield, Users, Settings, Key, Database, Activity, Search, X, Download, ShieldCheck, UserCheck, AlertCircle, Info } from 'lucide-react';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button, Avatar, Badge } from '@/components/ui';
 import { MOCK_USERS, PROFILE_LABELS } from '@/lib/mock-data';
