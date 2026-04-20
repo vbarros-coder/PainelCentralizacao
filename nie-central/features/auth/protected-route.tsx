@@ -12,10 +12,11 @@ import { useAuth } from './auth-context';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { UserProfile } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredProfiles?: ('admin' | 'diretor' | 'usuario')[];
+  requiredProfiles?: UserProfile[];
   fallback?: React.ReactNode;
 }
 
