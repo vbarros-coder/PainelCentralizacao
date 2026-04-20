@@ -36,6 +36,17 @@ export function AddvaluChat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Escutar evento global para abrir o chat
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsOpen(true);
+      setIsMinimized(false);
+    };
+
+    window.addEventListener('open-addvalu-chat', handleOpenChat);
+    return () => window.removeEventListener('open-addvalu-chat', handleOpenChat);
+  }, []);
+
   // Auto-scroll para a última mensagem
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

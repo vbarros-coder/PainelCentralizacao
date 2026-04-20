@@ -130,10 +130,13 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
           {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* Help */}
+          {/* Help - Abre Addvalu Chat */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-addvalu-chat'));
+            }}
             className="p-2 text-gray-500 hover:text-[#0055A4] dark:text-gray-400 dark:hover:text-[#60a5fa] hover:bg-[#0055A4]/10 dark:hover:bg-[#0055A4]/20 rounded-lg transition-colors"
           >
             <HelpCircle className="w-5 h-5" />
