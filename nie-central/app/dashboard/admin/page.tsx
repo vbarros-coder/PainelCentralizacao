@@ -58,30 +58,6 @@ function AdminContent() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-transparent p-6">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[#F47920]/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-[#F47920]" />
-            </div>
-            
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Administração
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Gerenciamento do sistema
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
   // Admin Cards
   const adminItems = useMemo(() => {
     const items = [
