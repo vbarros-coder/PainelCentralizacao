@@ -6,6 +6,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Output mode for Cloudflare Pages (Static Export)
+  output: 'export',
+  distDir: 'out',
+  
   // Security Headers
   async headers() {
     return [
