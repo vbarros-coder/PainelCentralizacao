@@ -129,7 +129,6 @@ export function HeroSection() {
             className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed"
           >
             Acesso centralizado às soluções estratégicas, operacionais e tecnológicas.
-            Gerencie projetos, acompanhe progresso e colabore com sua equipe.
           </motion.p>
 
           {/* Stats */}
