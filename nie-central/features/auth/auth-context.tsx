@@ -43,7 +43,9 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   checkPermission: (requiredProfiles: UserProfile[]) => boolean;
+  isSuperAdmin: () => boolean;
   canAccessProject: (projectDiretoria: string) => boolean;
+  canAccessReports: () => boolean;
   updateUser: (updates: Partial<User>) => void;
   getAllUsers: () => User[];
   updateUserAdmin: (userId: string, updates: Partial<User>) => void;
@@ -250,8 +252,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'Sua conta está desativada. Entre em contato com o suporte.' };
     }
 
+    // Automação: Atualizar último acesso centralizado
+    const updatedUserWithLogin = { ...user, lastLogin: new Date().toISOString() };
+    centralUsers[email] = updatedUserWithLogin;
+    localStorage.setItem('nie_central_users_v1', JSON.stringify(centralUsers));
+
     // Carregar preferências persistentes
-    let persistedUser = { ...user };
+    let persistedUser = { ...updatedUserWithLogin };
     if (isClient()) {
       const userPrefs = localStorage.getItem(USER_PREFERENCES_KEY);
       const preferences = userPrefs ? JSON.parse(userPrefs) : {};
@@ -370,33 +377,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkPermission = useCallback((requiredProfiles: UserProfile[]): boolean => {
     if (!state.user) return false;
     
-    // Master admin tem todas as permissões
-    if (state.user.profile === 'master_admin') return true;
+    // Automação: Master Admin e Whitelist têm acesso total sempre
+    if (isSuperAdmin()) return true;
     
-    // Admin tem quase todas, exceto algumas de master (se houver)
-    if (state.user.profile === 'admin' && requiredProfiles.includes('admin')) return true;
+    // Usuários comuns não acessam Admin nem Relatórios (bloqueio automático)
+    if (state.user.profile === 'usuario') return false;
 
     return requiredProfiles.includes(state.user.profile);
+  }, [state.user]);
+
+  const canAccessReports = useCallback((): boolean => {
+    if (!state.user) return false;
+    
+    // Automação: Master Admin e Whitelist acesso total
+    if (isSuperAdmin()) return true;
+    
+    // Apenas Diretores, Coordenadores e Executivos acessam relatórios
+    const ALLOWED_PROFILES: UserProfile[] = ['diretoria', 'coordenacao', 'executivo'];
+    return ALLOWED_PROFILES.includes(state.user.profile);
   }, [state.user]);
 
   const canAccessProject = useCallback((projectDiretoria: string): boolean => {
     if (!state.user) return false;
     
-    // Master admin e Admin acesso total
-    if (['master_admin', 'admin', 'executivo'].includes(state.user.profile)) return true;
+    // Automação: Acesso Total
+    if (isSuperAdmin() || state.user.profile === 'executivo') return true;
     
-    // Diretor acesso à sua diretoria
+    // Diretor e Coordenador acesso à sua diretoria automática
     if (state.user.profile === 'diretoria' || state.user.profile === 'coordenacao') {
       return state.user.diretoria === projectDiretoria;
     }
     
-    // Usuário restrito pode ter lógica adicional aqui
-    if (state.user.profile === 'usuario_restrito') {
-       // Por exemplo, apenas projetos que ele é responsável ou equipe
-       return false; // Implementação base
-    }
-
-    return true;
+    return true; // Usuário comum vê todos os projetos (visualização apenas)
   }, [state.user]);
 
   // ============================================
@@ -474,6 +486,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (isClient()) {
       localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsersDb));
+      
+      // Automação: Persistir alteração administrativa no armazenamento central
+      const userToUpdate = newUsersDb.find(u => u.id === userId);
+      if (userToUpdate) {
+        const centralStorage = localStorage.getItem('nie_central_users_v1');
+        const centralUsers = centralStorage ? JSON.parse(centralStorage) : {};
+        centralUsers[userToUpdate.email] = userToUpdate;
+        localStorage.setItem('nie_central_users_v1', JSON.stringify(centralUsers));
+      }
     }
 
     // Se o usuário editado for o logado, atualizar sessão
@@ -597,6 +618,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     checkPermission,
     canAccessProject,
+    canAccessReports,
     updateUser,
     getAllUsers,
     updateUserAdmin,

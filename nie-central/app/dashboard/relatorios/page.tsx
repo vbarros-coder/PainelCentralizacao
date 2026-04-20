@@ -7,12 +7,13 @@
 
 import { motion } from 'framer-motion';
 import { BarChart3, FileText, Download, TrendingUp, Users, FolderKanban } from 'lucide-react';
-import { ProtectedRoute } from '@/features/auth/protected-route';
+import { useAuth } from '@/features/auth/auth-context';
 import { Card, Button } from '@/components/ui';
 import { MOCK_PROJECTS } from '@/lib/mock-data';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 function RelatoriosContent() {
+  const { user, isSuperAdmin, logAction } = useAuth();
   const [downloading, setDownloading] = useState<string | null>(null);
 
   // Lógica para obter o mês e ano atual dinamicamente
@@ -20,31 +21,42 @@ function RelatoriosContent() {
   const currentMonthYear = currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
   const formattedMonthYear = currentMonthYear.charAt(0).toUpperCase() + currentMonthYear.slice(1);
 
+  // Automação: Filtrar estatísticas por diretoria (se não for super admin)
+  const stats = useMemo(() => {
+    const projects = MOCK_PROJECTS.filter(p => 
+      isSuperAdmin() || user?.profile === 'executivo' || p.diretoria === user?.diretoria
+    );
+
+    return {
+      total: projects.length,
+      ativos: projects.filter(p => p.status === 'ativo').length,
+      concluidos: projects.filter(p => p.status === 'concluido').length,
+      tecnologia: projects.filter(p => p.categoria === 'tecnologia').length,
+      diretoria: user?.diretoria || 'Geral'
+    };
+  }, [user, isSuperAdmin]);
+
   const handleDownload = (name: string) => {
     if (typeof window === 'undefined') return;
     setDownloading(name);
     
     // Simular geração e download de PDF/Excel
     setTimeout(() => {
-      const content = `Relatório: ${name}\nGerado em: ${new Date().toLocaleString()}\n\nEste é um arquivo de demonstração da Central NIE.`;
+      const content = `Relatório: ${name}\nEscopo: ${stats.diretoria}\nGerado em: ${new Date().toLocaleString()}\n\nEste é um arquivo de demonstração da Central NIE.`;
       const blob = new Blob([content], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${name.toLowerCase().replace(/\s+/g, '_')}_2026.txt`;
+      a.download = `${name.toLowerCase().replace(/\s+/g, '_')}_${stats.diretoria.toLowerCase().replace(/\s+/g, '_')}.txt`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       setDownloading(null);
-    }, 1500);
-  };
 
-  const stats = {
-    total: MOCK_PROJECTS.length,
-    ativos: MOCK_PROJECTS.filter(p => p.status === 'ativo').length,
-    concluidos: MOCK_PROJECTS.filter(p => p.status === 'concluido').length,
-    tecnologia: MOCK_PROJECTS.filter(p => p.categoria === 'tecnologia').length,
+      // Automação: Registrar geração de relatório nos logs
+      logAction(`Relatório Gerado: ${name}`, 'ADMIN', `Escopo: ${stats.diretoria}`);
+    }, 1500);
   };
 
   return (
@@ -59,7 +71,7 @@ function RelatoriosContent() {
             Relatórios
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Estatísticas e indicadores da Central NIE
+            Estatísticas e indicadores da Central NIE - {stats.diretoria}
           </p>
         </motion.div>
 
@@ -161,9 +173,21 @@ function RelatoriosContent() {
 }
 
 export default function RelatoriosPage() {
+  const { canAccessReports } = useAuth();
+  
   return (
     <ProtectedRoute>
-      <RelatoriosContent />
+      {canAccessReports() ? (
+        <RelatoriosContent />
+      ) : (
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <Card className="p-8 max-w-md text-center">
+            <BarChart3 className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Acesso Restrito</h2>
+            <p className="text-gray-500">Seu perfil não possui permissão para visualizar relatórios administrativos.</p>
+          </Card>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }

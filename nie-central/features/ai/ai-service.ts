@@ -40,27 +40,39 @@ class AddvaluService {
 
     // 1. Identificar intenção e contexto
     const lowerPrompt = prompt.toLowerCase();
+
+    // Respostas informais e saudações
+    const informalGreetings = ['oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'blz', 'beleza', 'tudo bem', 'hey'];
+    const confirmations = ['ok', 'entendi', 'vlw', 'valeu', 'obrigado', 'obrigada', 'show', 'top', 'kkk', 'rsrs'];
     
-    if (lowerPrompt.includes('quem é você') || lowerPrompt.includes('o que você faz')) {
-      response = "Eu sou a Addvalu, sua assistente inteligente na Central de Projetos NIE. Posso ajudar você a interpretar os indicadores desta tela, orientar sua navegação e tirar dúvidas sobre os processos da Addvalora.";
-    } 
-    else if (lowerPrompt.includes('ajuda') || lowerPrompt.includes('navegação') || lowerPrompt.includes('como usar')) {
-      response = `Atualmente você está na página de ${context.pageName}. Nesta área você pode visualizar os principais indicadores operacionais. O menu lateral permite acessar Projetos, Equipe e Relatórios. Como posso auxiliar em sua tarefa específica agora?`;
+    if (informalGreetings.some(g => lowerPrompt.includes(g) && prompt.length < 15)) {
+      response = `Olá! Sou a Addvalu. Como posso ajudar você hoje no ${context.pageName}?`;
     }
-    else if (context.pageName.includes('Painel') || context.pageName.includes('Dashboard')) {
-      if (lowerPrompt.includes('indicador') || lowerPrompt.includes('card') || lowerPrompt.includes('número')) {
-        response = "Os indicadores no topo mostram o volume de projetos ativos, em destaque e seus status. Por exemplo, os cards de destaque indicam projetos que requerem atenção prioritária da diretoria.";
-      } else if (lowerPrompt.includes('atraso') || lowerPrompt.includes('alerta')) {
-        response = "Indicadores em atraso referem-se a projetos que ultrapassaram o SLA acordado ou a data final planejada. O status de alerta é ativado quando o progresso está abaixo do esperado para o cronograma atual.";
+    else if (confirmations.some(c => lowerPrompt.includes(c) && prompt.length < 10)) {
+      response = "Disponha! Estou aqui se precisar de qualquer outra análise ou ajuda com o sistema.";
+    }
+    else if (lowerPrompt.includes('quem é você') || lowerPrompt.includes('o que você faz')) {
+      response = "Eu sou a Addvalu, sua assistente inteligente na Central de Projetos NIE. Posso ajudar você a interpretar indicadores, gerar relatórios automáticos da sua diretoria e orientar sua navegação.";
+    }
+    else if (lowerPrompt.includes('relatório') || lowerPrompt.includes('gerar') || lowerPrompt.includes('resumo')) {
+      if (context.userProfile === 'usuario') {
+        response = "Desculpe, mas seu perfil de acesso não permite a geração de relatórios administrativos. Por favor, entre em contato com seu gestor.";
       } else {
-        response = `Com base no contexto do ${context.pageName}, posso analisar os projetos visíveis para você. Como seu perfil é de ${context.userProfile}, você tem acesso aos dados da diretoria ${context.userDiretoria || 'Geral'}.`;
+        const scope = context.userDiretoria || 'Geral';
+        response = `Com base nos dados atuais do painel, gerei um resumo executivo para a diretoria ${scope}: Temos 12 projetos ativos, com 85% de progresso médio. Identifiquei 2 pontos de atenção em atraso técnico. Gostaria que eu detalhasse os riscos desses projetos?`;
       }
     }
-    else if (context.pageName.includes('Usuários') || context.pageName.includes('Administração')) {
-       response = "Esta é a área de gestão de acessos. Aqui os administradores podem aprovar novos cadastros e definir perfis de permissão (RBAC). Novos usuários aparecem com um destaque roxo até serem revisados.";
+    else if (lowerPrompt.includes('atenção') || lowerPrompt.includes('atraso') || lowerPrompt.includes('risco')) {
+      response = "Analisando o contexto: O projeto 'Painel de Controle de Prazos' apresenta um leve desvio no cronograma da fase 3. Recomendo revisar a alocação da equipe técnica. Deseja que eu envie um alerta para o coordenador responsável?";
+    }
+    else if (lowerPrompt.includes('ajuda') || lowerPrompt.includes('não entendi') || lowerPrompt.includes('explica melhor')) {
+      response = `Claro! Atualmente você está em ${context.pageName}. Como ${context.userProfile}, você pode ver os dados da diretoria ${context.userDiretoria || 'Geral'}. O que especificamente você gostaria que eu detalhasse? Posso falar sobre indicadores, projetos ou permissões.`;
+    }
+    else if (context.pageName.includes('Painel') || context.pageName.includes('Dashboard')) {
+      response = `Como assistente Addvalu, analisei os dados do seu Painel. Atualmente, a diretoria ${context.userDiretoria || 'Geral'} apresenta indicadores estáveis. Notei que você aplicou alguns filtros recentemente; deseja que eu faça uma projeção de entrega com base neles?`;
     }
     else {
-      response = "Entendi sua solicitação. Como assistente Addvalu, analisei os dados presentes nesta tela e posso confirmar que as informações seguem os padrões operacionais da Addvalora. Precisa de uma explicação técnica sobre algum ponto específico?";
+      response = "Entendi sua mensagem. Como assistente inteligente, estou monitorando os dados em tempo real. Sua solicitação foi registrada e posso ajudar com análises mais profundas se você desejar. O que mais podemos fazer hoje?";
     }
 
     // Adicionar ao histórico

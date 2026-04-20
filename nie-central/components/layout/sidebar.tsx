@@ -44,10 +44,13 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout, checkPermission } = useAuth();
+  const { user, logout, checkPermission, canAccessReports } = useAuth();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const filteredNavItems = navItems.filter((item) => {
+    // Automação: Bloqueio automático de Relatórios para quem não tem acesso
+    if (item.id === 'relatorios' && !canAccessReports()) return false;
+    
     if (!item.requiredProfile) return true;
     return checkPermission(item.requiredProfile);
   });

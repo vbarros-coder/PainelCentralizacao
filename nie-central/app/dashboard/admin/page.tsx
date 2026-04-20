@@ -384,14 +384,24 @@ function AdminContent() {
 }
 
 export default function AdminPage() {
-  const { isSuperAdmin, isAuthenticated } = useAuth();
+  const { isSuperAdmin, checkPermission } = useAuth();
   
-  // Se for uma tentativa de acesso direto por URL por usuário não autorizado
-  // A ProtectedRoute já lida com perfis, mas aqui reforçamos com a whitelist nominal se necessário
-  
+  // Automação: Bloqueio automático para quem não é Super Admin ou Admin nominal
+  const hasAccess = isSuperAdmin() || checkPermission(['admin']);
+
   return (
     <ProtectedRoute requiredProfiles={['master_admin', 'admin']}>
-      <AdminContent />
+      {hasAccess ? (
+        <AdminContent />
+      ) : (
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <Card className="p-8 max-w-md text-center">
+            <Shield className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Acesso Negado</h2>
+            <p className="text-gray-500">Esta área é restrita à Alta Administração autorizada.</p>
+          </Card>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }
