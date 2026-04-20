@@ -10,10 +10,35 @@ import { Shield, Users, Settings, Key, Database, Activity } from 'lucide-react';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button } from '@/components/ui';
 import { MOCK_USERS } from '@/lib/mock-data';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+import { useAuth } from '@/features/auth/auth-context';
 
 function AdminContent() {
+  const router = useRouter();
+  const { getAllUsers } = useAuth();
+  const [executing, setExecuting] = useState<string | null>(null);
+  
+  const allUsers = getAllUsers();
+  const newUsersCount = allUsers.filter(u => u.isNew).length;
+
+  const handleAction = (item: any) => {
+    if (item.title === 'Usuários') {
+      router.push('/dashboard/admin/usuarios');
+    } else if (item.title === 'Configurações') {
+      router.push('/dashboard/configuracoes');
+    } else {
+      setExecuting(item.title);
+      setTimeout(() => {
+        alert(`Ação "${item.action}" para ${item.title} concluída com sucesso!`);
+        setExecuting(null);
+      }, 1500);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <div className="min-h-screen bg-transparent p-6">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -41,10 +66,11 @@ function AdminContent() {
           {[
             { 
               title: 'Usuários', 
-              desc: `${MOCK_USERS.length} usuários cadastrados`, 
+              desc: `${allUsers.length} usuários cadastrados`, 
               icon: Users, 
               color: '#00A651',
-              action: 'Gerenciar'
+              action: 'Gerenciar',
+              badge: newUsersCount > 0 ? `${newUsersCount} novos` : null
             },
             { 
               title: 'Permissões', 
@@ -81,7 +107,14 @@ function AdminContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="p-6 h-full flex flex-col">
+              <Card className="p-6 h-full flex flex-col relative overflow-hidden">
+                {item.badge && (
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                      {item.badge}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-4">
                   <div 
                     className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -98,7 +131,13 @@ function AdminContent() {
                   {item.desc}
                 </p>
 
-                <Button variant="outline" size="sm" className="w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  isLoading={executing === item.title}
+                  onClick={() => handleAction(item)}
+                >
                   {item.action}
                 </Button>
               </Card>
@@ -112,7 +151,7 @@ function AdminContent() {
 
 export default function AdminPage() {
   return (
-    <ProtectedRoute requiredProfiles={['admin']}>
+    <ProtectedRoute requiredProfiles={['master_admin', 'admin']}>
       <AdminContent />
     </ProtectedRoute>
   );

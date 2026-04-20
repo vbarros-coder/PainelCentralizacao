@@ -6,34 +6,36 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { ProtectedRoute } from '@/features/auth/protected-route';
+import { AddvaluChat } from '@/features/ai/addvalu-chat';
 import { cn } from '@/lib/utils';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-background relative">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      <Topbar isSidebarCollapsed={isSidebarCollapsed} />
-
-      <motion.main
-        initial={false}
-        animate={{
-          marginLeft: isSidebarCollapsed ? 80 : 280,
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="pt-16 min-h-screen"
+      <div
+        className={cn(
+          "flex flex-col min-h-screen transition-all duration-300",
+          isSidebarCollapsed ? "pl-20" : "pl-72"
+        )}
       >
-        {children}
-      </motion.main>
+        <Topbar isSidebarCollapsed={isSidebarCollapsed} />
+
+        <main className="flex-1 pt-16 bg-background">{children}</main>
+      </div>
+
+      {/* Addvalu IA - Assistente Virtual */}
+      <AddvaluChat />
     </div>
   );
 }

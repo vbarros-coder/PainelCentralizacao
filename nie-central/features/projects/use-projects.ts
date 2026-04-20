@@ -10,9 +10,12 @@ import { Project, ProjectFilters, ProjectSort } from '@/types';
 import { MOCK_PROJECTS } from '@/lib/mock-data';
 import { isClient } from '@/lib/utils';
 
+import { useAuth } from '@/features/auth/auth-context';
+
 const FAVORITES_STORAGE_KEY = 'nie_project_favorites';
 
 export function useProjects() {
+  const { canAccessProject, user } = useAuth();
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [filters, setFilters] = useState<ProjectFilters>({
     search: '',
@@ -28,28 +31,31 @@ export function useProjects() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load favorites from localStorage
+  // Load favorites and filter by access
   useEffect(() => {
     if (!isClient()) return;
+    
+    // Aplicar restrição de acesso por diretoria/RBAC
+    const accessibleProjects = MOCK_PROJECTS.filter(p => canAccessProject(p.diretoria));
     
     const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
     if (stored) {
       try {
         const favorites: string[] = JSON.parse(stored);
-        setProjects((prev) =>
-          prev.map((p) => ({
-            ...p,
-            favorito: favorites.includes(p.id),
-          }))
-        );
+        setProjects(accessibleProjects.map((p) => ({
+          ...p,
+          favorito: favorites.includes(p.id),
+        })));
       } catch {
-        // Ignore parse errors
+        setProjects(accessibleProjects);
       }
+    } else {
+      setProjects(accessibleProjects);
     }
     
     // Simulate loading
     setTimeout(() => setIsLoading(false), 500);
-  }, []);
+  }, [canAccessProject, user?.profile, user?.diretoria]);
 
   // Save favorites to localStorage
   const saveFavorites = useCallback((projectId: string, isFavorite: boolean) => {

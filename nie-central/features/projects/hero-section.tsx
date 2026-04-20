@@ -92,10 +92,10 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00A651]/10 dark:bg-[#00A651]/20 border border-[#00A651]/20 dark:border-[#00A651]/30 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0055A4]/10 dark:bg-[#0055A4]/20 border border-[#0055A4]/20 dark:border-[#0055A4]/30 mb-6"
           >
-            <Sparkles className="w-4 h-4 text-[#00A651]" />
-            <span className="text-sm font-medium text-[#00A651] dark:text-[#4ade80]">
+            <Sparkles className="w-4 h-4 text-[#0055A4]" />
+            <span className="text-sm font-medium text-[#0055A4] dark:text-[#60a5fa]">
               Núcleo de Inteligência Estratégica
             </span>
           </motion.div>
@@ -107,7 +107,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight"
           >
-            Central de Projetos{' '}
+            Painel de Projetos{' '}
             <span className="relative">
               <span className="bg-gradient-to-r from-[#00A651] to-[#0055A4] bg-clip-text text-transparent">
                 NIE
@@ -140,8 +140,8 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
           >
             {[
-              { value: '17', label: 'Projetos Ativos', color: '#00A651' },
-              { value: '8', label: 'Diretorias', color: '#0055A4' },
+              { value: '17', label: 'Projetos Ativos', color: '#0055A4' },
+              { value: '5', label: 'Diretorias', color: '#00A651' },
               { value: '100%', label: 'Seguro', color: '#F47920' },
             ].map((stat, index) => (
               <motion.div

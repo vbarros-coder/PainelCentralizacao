@@ -25,12 +25,15 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/auth-context';
 import { Avatar } from '@/components/ui';
 
-const navItems: { id: string; label: string; href: string; icon: React.ElementType; requiredProfile?: ('admin' | 'diretor' | 'usuario')[] }[] = [
-  { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+import { UserProfile } from '@/types';
+import { PROFILE_LABELS } from '@/lib/mock-data';
+
+const navItems: { id: string; label: string; href: string; icon: React.ElementType; requiredProfile?: UserProfile[] }[] = [
+  { id: 'dashboard', label: 'Painel', href: '/dashboard', icon: LayoutDashboard },
   { id: 'projetos', label: 'Projetos', href: '/dashboard/projetos', icon: FolderKanban },
   { id: 'equipe', label: 'Equipe', href: '/dashboard/equipe', icon: Users },
   { id: 'relatorios', label: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
-  { id: 'admin', label: 'Administração', href: '/dashboard/admin', icon: Shield, requiredProfile: ['admin'] },
+  { id: 'admin', label: 'Administração', href: '/dashboard/admin', icon: Shield, requiredProfile: ['master_admin', 'admin'] },
   { id: 'configuracoes', label: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ];
 
@@ -55,13 +58,13 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       animate={{ width: isCollapsed ? 80 : 280 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={cn(
-        'fixed left-0 top-0 h-screen bg-white dark:bg-gray-900',
-        'border-r border-gray-200 dark:border-gray-800',
+        'fixed left-0 top-0 h-screen bg-card',
+        'border-r border-border',
         'flex flex-col z-50 shadow-lg'
       )}
     >
       {/* Header com Logo Addvalora */}
-      <div className="h-20 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="h-20 flex items-center justify-between px-4 border-b border-border">
         <AnimatePresence mode="wait">
           {!isCollapsed && (
             <motion.div
@@ -101,7 +104,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           onClick={onToggle}
           className={cn(
             'p-2 rounded-lg transition-colors',
-            'text-gray-500 hover:bg-[#00A651]/10 hover:text-[#00A651] dark:text-gray-400 dark:hover:bg-[#00A651]/20',
+            'text-gray-500 hover:bg-[#0055A4]/10 hover:text-[#0055A4] dark:text-gray-400 dark:hover:bg-[#0055A4]/20',
             isCollapsed && 'mx-auto mt-2'
           )}
         >
@@ -134,21 +137,21 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   'relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                   'group cursor-pointer',
                   isActive
-                    ? 'bg-[#00A651]/10 text-[#00A651] dark:bg-[#00A651]/20 dark:text-[#4ade80]'
-                    : 'text-gray-600 hover:bg-[#00A651]/5 hover:text-[#00A651] dark:text-gray-400 dark:hover:bg-[#00A651]/10'
+                    ? 'bg-[#0055A4]/10 text-[#0055A4] dark:bg-[#0055A4]/20 dark:text-[#60a5fa]'
+                    : 'text-gray-600 hover:bg-[#0055A4]/5 hover:text-[#0055A4] dark:text-gray-400 dark:hover:bg-[#0055A4]/10'
                 )}
               >
-                {/* Active indicator - Verde Addvalora */}
+                {/* Active indicator - Azul Addvalora */}
                 {isActive && (
                   <motion.div
                     layoutId="activeNav"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#00A651] rounded-r-full"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#0055A4] rounded-r-full"
                   />
                 )}
 
                 <Icon className={cn(
                   'w-5 h-5 flex-shrink-0 transition-colors',
-                  isActive && 'text-[#00A651] dark:text-[#4ade80]'
+                  isActive && 'text-[#0055A4] dark:text-[#60a5fa]'
                 )} />
 
                 <AnimatePresence mode="wait">
@@ -170,7 +173,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="absolute left-full ml-2 px-3 py-1.5 bg-[#00A651] text-white text-sm rounded-lg whitespace-nowrap z-50"
+                    className="absolute left-full ml-2 px-3 py-1.5 bg-[#0055A4] text-white text-sm rounded-lg whitespace-nowrap z-50"
                   >
                     {item.label}
                   </motion.div>
@@ -182,7 +185,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+      <div className="p-4 border-t border-border">
         <div
           className={cn(
             'flex items-center gap-3',
@@ -207,9 +210,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   {user?.name}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {user?.profile === 'admin' && 'Administrador'}
-                  {user?.profile === 'diretor' && `Diretor ${user?.diretoria ? `- ${user.diretoria}` : ''}`}
-                  {user?.profile === 'usuario' && 'Usuário'}
+                  {user?.profile && PROFILE_LABELS[user.profile]}
+                  {user?.diretoria && ` - ${user.diretoria}`}
                 </p>
               </motion.div>
             )}

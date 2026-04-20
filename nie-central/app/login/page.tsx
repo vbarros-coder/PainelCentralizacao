@@ -15,6 +15,7 @@ import {
   Mail,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth } from '@/features/auth/auth-context';
 import { cn, sanitizeInput, isValidEmail } from '@/lib/utils';
 import { CURRENT_YEAR } from '@/lib/mock-data';
@@ -152,7 +153,7 @@ export default function LoginPage() {
                   className={cn(
                     'w-full px-4 py-3 rounded-lg border bg-white',
                     'text-gray-900 placeholder:text-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-[#F47920] focus:border-transparent',
+                    'focus:outline-none focus:border-[#F47920]',
                     'transition-all duration-200',
                     error ? 'border-red-300' : 'border-gray-300'
                   )}
@@ -175,7 +176,7 @@ export default function LoginPage() {
                   className={cn(
                     'w-full px-4 py-3 rounded-lg border bg-white',
                     'text-gray-900 placeholder:text-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-[#F47920] focus:border-transparent',
+                    'focus:outline-none focus:border-[#F47920]',
                     'transition-all duration-200',
                     error ? 'border-red-300' : 'border-gray-300'
                   )}
@@ -202,7 +203,7 @@ export default function LoginPage() {
               className={cn(
                 'w-full py-3 px-4 rounded-lg font-semibold text-white',
                 'bg-[#F47920] hover:bg-[#d66818]',
-                'focus:outline-none focus:ring-2 focus:ring-[#F47920] focus:ring-offset-2',
+                'focus:outline-none',
                 'transition-all duration-200',
                 'disabled:opacity-50 disabled:cursor-not-allowed'
               )}
@@ -210,6 +211,16 @@ export default function LoginPage() {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
+
+          {/* Registro Link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              Não tem uma conta?{' '}
+              <Link href="/registro" className="text-[#F47920] font-semibold hover:underline">
+                Solicitar acesso
+              </Link>
+            </p>
+          </div>
 
           {/* Divider */}
           <div className="my-6 border-t border-gray-200" />

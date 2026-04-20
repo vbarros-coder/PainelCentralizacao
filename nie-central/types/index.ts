@@ -7,17 +7,29 @@
 // AUTHENTICATION
 // ============================================
 
-export type UserProfile = 'admin' | 'diretor' | 'usuario';
+export type UserProfile = 
+  | 'master_admin' 
+  | 'admin' 
+  | 'executivo' 
+  | 'diretoria' 
+  | 'coordenacao' 
+  | 'usuario_restrito'
+  | 'usuario'; // Compatibilidade
+
+export type UserStatus = 'ativo' | 'pendente' | 'inativo';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   profile: UserProfile;
-  diretoria?: string; // Para perfil diretor - qual diretoria gerencia
+  diretoria?: string; 
+  cargo?: string;
+  status: UserStatus;
+  isNew?: boolean; // Para destaque administrativo
   avatar?: string;
   createdAt: string;
-  lastLogin: string;
+  lastLogin?: string;
 }
 
 export interface AuthSession {

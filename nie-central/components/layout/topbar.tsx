@@ -65,7 +65,7 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setTheme(isDark ? 'light' : 'dark')}
-        className="p-2 text-gray-500 hover:text-[#00A651] dark:text-gray-400 dark:hover:text-[#4ade80] hover:bg-[#00A651]/10 dark:hover:bg-[#00A651]/20 rounded-lg transition-colors"
+        className="p-2 text-gray-500 hover:text-[#0055A4] dark:text-gray-400 dark:hover:text-[#60a5fa] hover:bg-[#0055A4]/10 dark:hover:bg-[#0055A4]/20 rounded-lg transition-colors"
         aria-label={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -93,8 +93,8 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className={cn(
-          'fixed top-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl',
-          'border-b border-gray-200 dark:border-gray-800',
+          'fixed top-0 right-0 h-16 bg-card/80 backdrop-blur-xl',
+          'border-b border-border',
           'flex items-center justify-between px-6 z-40',
           'transition-all duration-300',
           isSidebarCollapsed ? 'left-20' : 'left-72'
@@ -103,7 +103,7 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
         {/* Left side - Breadcrumb / Title */}
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Central de Projetos
+            Painel de Projetos
           </h1>
           <Badge variant="info" size="sm">
             <Shield className="w-3 h-3 mr-1" />
@@ -134,7 +134,7 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="p-2 text-gray-500 hover:text-[#00A651] dark:text-gray-400 dark:hover:text-[#4ade80] hover:bg-[#00A651]/10 dark:hover:bg-[#00A651]/20 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:text-[#0055A4] dark:text-gray-400 dark:hover:text-[#60a5fa] hover:bg-[#0055A4]/10 dark:hover:bg-[#0055A4]/20 rounded-lg transition-colors"
           >
             <HelpCircle className="w-5 h-5" />
           </motion.button>
@@ -145,7 +145,7 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-gray-500 hover:text-[#00A651] dark:text-gray-400 dark:hover:text-[#4ade80] hover:bg-[#00A651]/10 dark:hover:bg-[#00A651]/20 rounded-lg transition-colors"
+              className="relative p-2 text-gray-500 hover:text-[#0055A4] dark:text-gray-400 dark:hover:text-[#60a5fa] hover:bg-[#0055A4]/10 dark:hover:bg-[#0055A4]/20 rounded-lg transition-colors"
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
@@ -188,11 +188,11 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
                         notifications.map((notif) => (
                           <motion.div
                             key={notif.id}
-                            whileHover={{ backgroundColor: 'rgba(0, 166, 81, 0.05)' }}
+                            whileHover={{ backgroundColor: 'rgba(0, 85, 164, 0.05)' }}
                             onClick={() => markAsRead(notif.id)}
                             className={cn(
                               'p-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors',
-                              notif.unread && 'bg-[#00A651]/5 dark:bg-[#00A651]/10'
+                              notif.unread && 'bg-[#0055A4]/5 dark:bg-[#0055A4]/10'
                             )}
                           >
                             <div className="flex items-start gap-2">
@@ -226,14 +226,15 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
 
           {/* User Menu */}
           <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="flex items-center gap-3 cursor-pointer"
+            whileHover={{ scale: 1.02, backgroundColor: 'rgba(0, 85, 164, 0.05)' }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-3 px-3 py-1.5 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-border"
           >
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none mb-1">
                 {user?.name}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-none">
                 {user?.email}
               </p>
             </div>

@@ -3,33 +3,71 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --border: #e5e7eb;
+}
+
+.dark {
+  --background: #0a0a0f;
+  --foreground: #ededed;
+  --card: #13131f;
+  --card-foreground: #ededed;
+  --border: #2a2a3e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0f;
-    --foreground: #ededed;
-  }
-}
-
 /* Base styles */
-html {
-  scroll-behavior: smooth;
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Ensure dark mode applies to everything */
+.dark body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Fix for containers that might have hardcoded backgrounds */
+.dark .bg-white {
+  background-color: var(--card) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--background) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--foreground) !important;
+}
+
+.dark .text-gray-600, 
+.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--border) !important;
 }
 
 /* Custom scrollbar */
@@ -59,16 +97,16 @@ body {
   background: #6b7280;
 }
 
-/* Selection */
-::selection {
-  background: rgba(59, 130, 246, 0.2);
-  color: inherit;
+/* Global focus reset to remove blue outlines */
+*:focus, :focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-/* Focus visible */
-:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+/* Selection */
+::selection {
+  background-color: #F47920;
+  color: white;
 }
 
 /* Reduced motion */

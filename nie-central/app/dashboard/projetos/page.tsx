@@ -13,7 +13,19 @@ import { MOCK_PROJECTS, CATEGORY_LABELS } from '@/lib/mock-data';
 import { categoryColors } from '@/lib/design-system';
 import { cn } from '@/lib/utils';
 
+import { useProjects } from '@/features/projects/use-projects';
+
 function ProjetosContent() {
+  const { projects, isLoading } = useProjects();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A651]"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
       <div className="max-w-7xl mx-auto">
@@ -26,12 +38,12 @@ function ProjetosContent() {
             Projetos
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Todos os projetos disponíveis da Central NIE
+            Projetos autorizados para seu perfil na Central NIE
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_PROJECTS.map((project, index) => {
+          {projects.map((project, index) => {
             const categoryStyle = categoryColors[project.categoria];
             
             return (
@@ -85,6 +97,14 @@ function ProjetosContent() {
             );
           })}
         </div>
+
+        {projects.length === 0 && (
+          <div className="text-center py-20">
+            <FolderKanban className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-500">Nenhum projeto encontrado</h3>
+            <p className="text-sm text-gray-400">Você não tem permissão para acessar nenhum projeto nesta diretoria.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, AuthSession, LoginCredentials, AuthState, UserProfile } from '@/types';
+import { User, AuthSession, LoginCredentials, AuthState, UserProfile, UserStatus } from '@/types';
 import { MOCK_USERS, MOCK_PASSWORDS } from '@/lib/mock-data';
 import { generateId, isClient } from '@/lib/utils';
 
@@ -19,6 +19,8 @@ import { generateId, isClient } from '@/lib/utils';
 // ============================================
 
 const AUTH_STORAGE_KEY = 'nie_auth_session_v1';
+const USER_PREFERENCES_KEY = 'nie_user_preferences_v1';
+const USERS_DB_KEY = 'nie_users_db_v1'; // Simulação de banco de dados de usuários
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 horas
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutos
@@ -27,12 +29,24 @@ const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutos
 // TYPES
 // ============================================
 
+interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  diretoria?: string;
+  cargo?: string;
+  profile?: UserProfile;
+}
+
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   checkPermission: (requiredProfiles: UserProfile[]) => boolean;
   canAccessProject: (projectDiretoria: string) => boolean;
   updateUser: (updates: Partial<User>) => void;
+  getAllUsers: () => User[];
+  updateUserAdmin: (userId: string, updates: Partial<User>) => void;
   isLoading: boolean;
 }
 
@@ -60,6 +74,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [loginAttempts, setLoginAttempts] = useState<Record<string, LoginAttempt>>({});
+  const [usersDb, setUsersDb] = useState<User[]>([]);
+  const [passwordsDb, setPasswordsDb] = useState<Record<string, string>>({});
+
+  // Inicializar "Banco de Dados" simulado
+  useEffect(() => {
+    if (!isClient()) return;
+    
+    const storedUsers = localStorage.getItem(USERS_DB_KEY);
+    const storedPasswords = localStorage.getItem('nie_passwords_db_v1');
+    
+    if (storedUsers) {
+      setUsersDb(JSON.parse(storedUsers));
+    } else {
+      // Primeira vez, popular com MOCK_USERS
+      setUsersDb(MOCK_USERS);
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(MOCK_USERS));
+    }
+    
+    if (storedPasswords) {
+      setPasswordsDb(JSON.parse(storedPasswords));
+    } else {
+      // Primeira vez, popular com MOCK_PASSWORDS
+      setPasswordsDb(MOCK_PASSWORDS);
+      localStorage.setItem('nie_passwords_db_v1', JSON.stringify(MOCK_PASSWORDS));
+    }
+  }, []);
 
   // Carregar sessão do localStorage no mount
   useEffect(() => {
@@ -67,9 +107,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      const userPrefs = localStorage.getItem(USER_PREFERENCES_KEY);
+      const preferences = userPrefs ? JSON.parse(userPrefs) : {};
+
       if (stored) {
         const session: AuthSession = JSON.parse(stored);
         
+        // Aplicar preferências persistentes (como avatar) se existirem para este usuário
+        if (session.user && preferences[session.user.email]) {
+          session.user = { ...session.user, ...preferences[session.user.email] };
+        }
+
         // Verificar expiração
         if (session.expiresAt > Date.now()) {
           setState({
@@ -143,15 +191,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 500));
 
     // Buscar usuário
-    const user = MOCK_USERS.find((u) => u.email.toLowerCase() === email);
+    const user = usersDb.find((u) => u.email.toLowerCase() === email);
     
     if (!user) {
       incrementLoginAttempt(email);
       return { success: false, error: 'Credenciais inválidas' };
     }
 
+    if (user.status === 'pendente') {
+      return { success: false, error: 'Seu cadastro está em análise pela administração.' };
+    }
+
+    if (user.status === 'inativo') {
+      return { success: false, error: 'Sua conta está desativada. Entre em contato com o suporte.' };
+    }
+
+    // Carregar preferências persistentes
+    let persistedUser = { ...user };
+    if (isClient()) {
+      const userPrefs = localStorage.getItem(USER_PREFERENCES_KEY);
+      const preferences = userPrefs ? JSON.parse(userPrefs) : {};
+      if (preferences[email]) {
+        persistedUser = { ...user, ...preferences[email] };
+      }
+    }
+
     // Verificar senha (mock)
-    const storedPassword = MOCK_PASSWORDS[email];
+    const storedPassword = passwordsDb[email];
     if (!storedPassword || credentials.password !== storedPassword) {
       incrementLoginAttempt(email);
       return { success: false, error: 'Credenciais inválidas' };
@@ -167,7 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const session: AuthSession = {
       user: {
-        ...user,
+        ...persistedUser,
         lastLogin: new Date().toISOString(),
       },
       token: generateId(),
@@ -187,7 +253,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return { success: true };
-  }, [loginAttempts]);
+  }, [loginAttempts, usersDb, passwordsDb]);
+
+  // ============================================
+  // REGISTER
+  // ============================================
+
+  const register = useCallback(async (
+    data: RegisterData
+  ): Promise<{ success: boolean; error?: string }> => {
+    // Simular delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const email = data.email.toLowerCase().trim();
+
+    if (usersDb.some(u => u.email.toLowerCase() === email)) {
+      return { success: false, error: 'Este e-mail já está cadastrado.' };
+    }
+
+    const newUser: User = {
+      id: generateId(),
+      name: data.name,
+      email: email,
+      profile: data.profile || 'usuario',
+      diretoria: data.diretoria,
+      cargo: data.cargo,
+      status: 'pendente', // Novos usuários começam como pendentes
+      isNew: true,
+      createdAt: new Date().toISOString(),
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name.split(' ')[0]}`,
+    };
+
+    const newUsersDb = [...usersDb, newUser];
+    const newPasswordsDb = { ...passwordsDb, [email]: data.password };
+
+    setUsersDb(newUsersDb);
+    setPasswordsDb(newPasswordsDb);
+
+    if (isClient()) {
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsersDb));
+      localStorage.setItem('nie_passwords_db_v1', JSON.stringify(newPasswordsDb));
+    }
+
+    return { success: true };
+  }, [usersDb, passwordsDb]);
 
   // ============================================
   // LOGOUT
@@ -211,21 +320,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkPermission = useCallback((requiredProfiles: UserProfile[]): boolean => {
     if (!state.user) return false;
+    
+    // Master admin tem todas as permissões
+    if (state.user.profile === 'master_admin') return true;
+    
+    // Admin tem quase todas, exceto algumas de master (se houver)
+    if (state.user.profile === 'admin' && requiredProfiles.includes('admin')) return true;
+
     return requiredProfiles.includes(state.user.profile);
   }, [state.user]);
 
   const canAccessProject = useCallback((projectDiretoria: string): boolean => {
     if (!state.user) return false;
     
-    // Admin acesso total
-    if (state.user.profile === 'admin') return true;
+    // Master admin e Admin acesso total
+    if (['master_admin', 'admin', 'executivo'].includes(state.user.profile)) return true;
     
     // Diretor acesso à sua diretoria
-    if (state.user.profile === 'diretor') {
+    if (state.user.profile === 'diretoria' || state.user.profile === 'coordenacao') {
       return state.user.diretoria === projectDiretoria;
     }
     
-    // Usuário acesso restrito (apenas projetos ativos/concluídos)
+    // Usuário restrito pode ter lógica adicional aqui
+    if (state.user.profile === 'usuario_restrito') {
+       // Por exemplo, apenas projetos que ele é responsável ou equipe
+       return false; // Implementação base
+    }
+
     return true;
   }, [state.user]);
 
@@ -239,16 +360,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const updatedUser = { ...state.user, ...updates };
     setState((prev) => ({ ...prev, user: updatedUser }));
 
-    // Atualizar localStorage
+    // Atualizar no Banco de Dados simulado para persistência entre logins
+    const newUsersDb = usersDb.map(u => 
+      u.id === state.user?.id ? { ...u, ...updates } : u
+    );
+    setUsersDb(newUsersDb);
+    
     if (isClient()) {
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsersDb));
+      
+      // Atualizar sessão atual
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         const session: AuthSession = JSON.parse(stored);
         session.user = updatedUser;
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
       }
+
+      // Atualizar preferências permanentes do usuário
+      const userPrefs = localStorage.getItem(USER_PREFERENCES_KEY);
+      const preferences = userPrefs ? JSON.parse(userPrefs) : {};
+      
+      const persistentFields: Partial<User> = {};
+      if (updates.avatar) persistentFields.avatar = updates.avatar;
+      
+      if (Object.keys(persistentFields).length > 0) {
+        preferences[state.user.email] = {
+          ...(preferences[state.user.email] || {}),
+          ...persistentFields
+        };
+        localStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(preferences));
+      }
     }
-  }, [state.user]);
+  }, [state.user, usersDb]);
+
+  // ============================================
+  // ADMIN FUNCTIONS
+  // ============================================
+
+  const getAllUsers = useCallback((): User[] => {
+    return usersDb;
+  }, [usersDb]);
+
+  const updateUserAdmin = useCallback((userId: string, updates: Partial<User>) => {
+    // Restrição: Apenas William, Luciana ou Admin NIE podem alterar permissões (profile) ou status
+    const AUTHORIZED_EMAILS = [
+      'admin@addvalora.com',
+      'wfernandez@addvaloraglobal.com',
+      'lhey@addvaloraglobal.com'
+    ];
+
+    if (!state.user || !AUTHORIZED_EMAILS.includes(state.user.email.toLowerCase())) {
+      console.warn('Usuário não autorizado a realizar esta ação administrativa.');
+      return;
+    }
+
+    const newUsersDb = usersDb.map(u => 
+      u.id === userId ? { ...u, ...updates } : u
+    );
+    
+    setUsersDb(newUsersDb);
+    
+    if (isClient()) {
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsersDb));
+    }
+
+    // Se o usuário editado for o logado, atualizar sessão
+    if (state.user?.id === userId) {
+      const updatedUser = { ...state.user, ...updates };
+      setState((prev) => ({ ...prev, user: updatedUser }));
+      
+      if (isClient()) {
+        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (stored) {
+          const session: AuthSession = JSON.parse(stored);
+          session.user = updatedUser;
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+        }
+      }
+    }
+  }, [usersDb, state.user]);
 
   // ============================================
   // HELPERS
@@ -284,9 +475,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ...state,
     login,
     logout,
+    register,
     checkPermission,
     canAccessProject,
     updateUser,
+    getAllUsers,
+    updateUserAdmin,
     isLoading: state.isLoading,
   };
 

@@ -9,23 +9,8 @@
  */
 
 export const colors = {
-  // Brand Addvalora - Verde (Primária)
+  // Brand Addvalora - Azul (Primária)
   primary: {
-    50: '#f0fdf4',
-    100: '#dcfce7',
-    200: '#bbf7d0',
-    300: '#86efac',
-    400: '#4ade80',
-    500: '#00A651', // Verde Addvalora
-    600: '#16a34a',
-    700: '#15803d',
-    800: '#166534',
-    900: '#14532d',
-    950: '#052e16',
-  },
-  
-  // Brand Addvalora - Azul (Secundária)
-  secondary: {
     50: '#eff6ff',
     100: '#dbeafe',
     200: '#bfdbfe',
@@ -37,6 +22,21 @@ export const colors = {
     800: '#1e40af',
     900: '#1e3a8a',
     950: '#172554',
+  },
+  
+  // Brand Addvalora - Verde (Secundária)
+  secondary: {
+    50: '#f0fdf4',
+    100: '#dcfce7',
+    200: '#bbf7d0',
+    300: '#86efac',
+    400: '#4ade80',
+    500: '#00A651', // Verde Addvalora
+    600: '#16a34a',
+    700: '#15803d',
+    800: '#166534',
+    900: '#14532d',
+    950: '#052e16',
   },
   
   // Brand Addvalora - Laranja (Destaque)
@@ -202,7 +202,7 @@ export const shadows = {
   none: 'none',
   premium: '0 4px 20px -2px rgb(0 0 0 / 0.1), 0 8px 40px -4px rgb(0 0 0 / 0.08)',
   'premium-lg': '0 8px 30px -4px rgb(0 0 0 / 0.12), 0 16px 60px -8px rgb(0 0 0 / 0.08)',
-  glow: '0 0 40px -10px rgb(0 166 81 / 0.3)', // Glow verde Addvalora
+  glow: '0 0 40px -10px rgb(0 85 164 / 0.3)', // Glow azul Addvalora
 } as const;
 
 export const radii = {

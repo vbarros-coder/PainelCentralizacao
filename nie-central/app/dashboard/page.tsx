@@ -15,8 +15,10 @@ import { ProjectFiltersComponent } from '@/features/projects/project-filters';
 import { useProjects } from '@/features/projects/use-projects';
 import { Skeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/features/auth/auth-context';
 
 function DashboardContent() {
+  const { user } = useAuth();
   const {
     filteredProjects,
     featuredProjects,
@@ -32,7 +34,22 @@ function DashboardContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950">
+    <div className="min-h-screen bg-transparent">
+      <div className="max-w-7xl mx-auto px-6 pt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Olá, <span className="text-[#0055A4]">{user?.name}</span>!
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Bem-vindo ao Painel de Projetos NIE.
+          </p>
+        </motion.div>
+      </div>
+
       <HeroSection />
 
       <div className="px-6 pb-12">

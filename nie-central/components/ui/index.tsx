@@ -26,11 +26,11 @@ interface ButtonProps {
 }
 
 const buttonVariants = {
-  primary: 'bg-[#00A651] text-white hover:bg-[#008c44]',
-  secondary: 'bg-[#0055A4] text-white hover:bg-[#004a8c]',
+  primary: 'bg-[#0055A4] text-white hover:bg-[#004a8c]',
+  secondary: 'bg-[#00A651] text-white hover:bg-[#008c44]',
   ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
   danger: 'bg-[#F47920] text-white hover:bg-[#d66818]',
-  outline: 'bg-transparent border-2 border-[#00A651] text-[#00A651] hover:bg-[#00A651] hover:text-white',
+  outline: 'bg-transparent border-2 border-[#0055A4] text-[#0055A4] hover:bg-[#0055A4] hover:text-white',
 };
 
 const buttonSizes = {
@@ -89,8 +89,8 @@ export function Card({ children, className, isHoverable = false }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800',
-        'shadow-sm',
+        'bg-card rounded-xl border border-border',
+        'shadow-sm text-foreground',
         isHoverable && 'hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer',
         className
       )}
@@ -112,7 +112,7 @@ interface BadgeProps {
 }
 
 const badgeVariants = {
-  default: 'bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20',
+  default: 'bg-[#0055A4]/10 text-[#0055A4] border-[#0055A4]/20',
   success: 'bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20',
   warning: 'bg-[#F47920]/10 text-[#F47920] border-[#F47920]/20',
   error: 'bg-red-50 text-red-700 border-red-200',
@@ -164,8 +164,9 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
   return (
     <div
       className={cn(
-        'relative rounded-full overflow-hidden bg-gradient-to-br from-[#00A651] to-[#0055A4]',
-        'flex items-center justify-center text-white font-semibold',
+        'relative rounded-full overflow-hidden flex items-center justify-center text-white font-semibold shrink-0',
+        'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        !src && 'bg-gradient-to-br from-[#0055A4] to-[#00A651]',
         avatarSizes[size],
         className
       )}
@@ -175,6 +176,7 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
           src={src}
           alt={name}
           className="w-full h-full object-cover"
+          loading="lazy"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
           }}
@@ -241,7 +243,7 @@ export function Input({
           className={cn(
             'w-full rounded-lg border bg-white dark:bg-gray-900',
             'text-gray-900 dark:text-gray-100 placeholder:text-gray-400',
-            'focus:outline-none focus:ring-2 focus:ring-[#00A651] focus:border-transparent',
+            'focus:outline-none focus:ring-2 focus:ring-[#0055A4] focus:border-transparent',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             error ? 'border-red-500' : 'border-gray-300 dark:border-gray-700',
             leftIcon && 'pl-10',

@@ -10,8 +10,30 @@ import { BarChart3, FileText, Download, TrendingUp, Users, FolderKanban } from '
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button } from '@/components/ui';
 import { MOCK_PROJECTS } from '@/lib/mock-data';
+import { useState } from 'react';
 
 function RelatoriosContent() {
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDownload = (name: string) => {
+    setDownloading(name);
+    
+    // Simular geração e download de PDF/Excel
+    setTimeout(() => {
+      const content = `Relatório: ${name}\nGerado em: ${new Date().toLocaleString()}\n\nEste é um arquivo de demonstração da Central NIE.`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name.toLowerCase().replace(/\s+/g, '_')}_2026.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setDownloading(null);
+    }, 1500);
+  };
+
   const stats = {
     total: MOCK_PROJECTS.length,
     ativos: MOCK_PROJECTS.filter(p => p.status === 'ativo').length,
@@ -20,7 +42,7 @@ function RelatoriosContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <div className="min-h-screen bg-transparent p-6">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -38,10 +60,10 @@ function RelatoriosContent() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[
-            { label: 'Total de Projetos', value: stats.total, icon: FolderKanban, color: '#00A651' },
-            { label: 'Projetos Ativos', value: stats.ativos, icon: TrendingUp, color: '#0055A4' },
+            { label: 'Total de Projetos', value: stats.total, icon: FolderKanban, color: '#0055A4' },
+            { label: 'Projetos Ativos', value: stats.ativos, icon: TrendingUp, color: '#00A651' },
             { label: 'Concluídos', value: stats.concluidos, icon: FileText, color: '#F47920' },
-            { label: 'Tecnologia', value: stats.tecnologia, icon: BarChart3, color: '#00A651' },
+            { label: 'Tecnologia', value: stats.tecnologia, icon: BarChart3, color: '#0055A4' },
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -85,14 +107,14 @@ function RelatoriosContent() {
 
           <div className="space-y-4">
             {[
-              { name: 'Relatório de Projetos', desc: 'Visão geral de todos os projetos', date: 'Dezembro 2024' },
-              { name: 'Relatório de Atividades', desc: 'Atividades realizadas no período', date: 'Novembro 2024' },
-              { name: 'Relatório de Performance', desc: 'Indicadores de performance', date: 'Outubro 2024' },
+              { name: 'Relatório de Projetos', desc: 'Visão geral de todos os projetos', date: 'Dezembro 2026' },
+              { name: 'Relatório de Atividades', desc: 'Atividades realizadas no período', date: 'Novembro 2026' },
+              { name: 'Relatório de Performance', desc: 'Indicadores de performance', date: 'Outubro 2026' },
             ].map((rel, index) => (
               <Card key={rel.name} className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#00A651]/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-[#00A651]" />
+                  <div className="w-10 h-10 rounded-lg bg-[#0055A4]/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-[#0055A4]" />
                   </div>
                   
                   <div>
@@ -104,7 +126,13 @@ function RelatoriosContent() {
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-gray-400">{rel.date}</span>
                   
-                  <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    leftIcon={<Download className="w-4 h-4" />}
+                    isLoading={downloading === rel.name}
+                    onClick={() => handleDownload(rel.name)}
+                  >
                     Baixar
                   </Button>
                 </div>

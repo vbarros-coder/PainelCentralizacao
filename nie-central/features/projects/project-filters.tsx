@@ -127,7 +127,7 @@ export function ProjectFiltersComponent({
                 'w-full pl-10 pr-10 py-2.5 rounded-lg border',
                 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
                 'border-gray-300 dark:border-gray-700',
-                'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'focus:outline-none focus:ring-2 focus:ring-[#0055A4] focus:border-transparent',
                 'placeholder:text-gray-400'
               )}
             />
@@ -182,14 +182,14 @@ export function ProjectFiltersComponent({
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors',
               isExpanded
-                ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300'
+                ? 'bg-[#0055A4]/10 border-[#0055A4]/20 text-[#0055A4] dark:bg-[#0055A4]/20 dark:border-[#0055A4]/30 dark:text-[#60a5fa]'
                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300'
             )}
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filtros
             {activeFiltersCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+              <span className="ml-1 px-1.5 py-0.5 bg-[#0055A4] text-white text-xs rounded-full">
                 {activeFiltersCount}
               </span>
             )}

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, User, Bell, Shield, Moon, Sun, Mail, Camera, Upload } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -26,7 +26,9 @@ function ConfiguracoesContent() {
   const [previewImage, setPreviewImage] = useState(user?.avatar || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useState(() => setMounted(true));
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -48,13 +50,13 @@ function ConfiguracoesContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <div className="min-h-screen bg-transparent p-6">
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
-003e
+        >
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Configurações
           </h1>
@@ -178,6 +180,44 @@ function ConfiguracoesContent() {
                 <Moon className="w-6 h-6 mb-2 text-[#0055A4]" />
                 <p className="font-medium text-gray-900 dark:text-white">Escuro</p>
               </button>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Tema */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Moon className="w-5 h-5 text-[#00A651]" />
+              Aparência
+            </h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">Modo Escuro</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Alternar entre tema claro e escuro</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="gap-2"
+              >
+                {mounted && resolvedTheme === 'dark' ? (
+                  <>
+                    <Sun className="w-4 h-4" />
+                    Modo Claro
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4" />
+                    Modo Escuro
+                  </>
+                )}
+              </Button>
             </div>
           </Card>
         </motion.div>

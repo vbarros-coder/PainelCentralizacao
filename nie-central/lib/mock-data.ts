@@ -17,22 +17,36 @@ export const NEXT_YEAR = CURRENT_YEAR + 1;
 // ============================================
 
 export const MOCK_USERS: User[] = [
+  // Master Admin
+  {
+    id: 'usr-000',
+    email: 'master@addvalora.com',
+    name: 'Administrador Master',
+    profile: 'master_admin',
+    status: 'ativo',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=master',
+    createdAt: `${CURRENT_YEAR}-01-01T10:00:00Z`,
+    lastLogin: new Date().toISOString(),
+  },
   // Admin
   {
     id: 'usr-001',
     email: 'admin@addvalora.com',
     name: 'Administrador NIE',
     profile: 'admin',
+    status: 'ativo',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
     createdAt: `${CURRENT_YEAR}-01-15T10:00:00Z`,
     lastLogin: new Date().toISOString(),
   },
-  // CEOs
+  // CEOs / Executivos
   {
     id: 'usr-ceo-1',
     email: 'lhey@addvaloraglobal.com',
-    name: 'CEO - Lhey',
-    profile: 'admin',
+    name: 'Lhey',
+    profile: 'executivo',
+    status: 'ativo',
+    cargo: 'CEO',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lhey',
     createdAt: `${CURRENT_YEAR}-01-01T00:00:00Z`,
     lastLogin: new Date().toISOString(),
@@ -40,8 +54,10 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-ceo-2',
     email: 'wfernandez@addvaloraglobal.com',
-    name: 'CEO - W. Fernandez',
-    profile: 'admin',
+    name: 'W. Fernandez',
+    profile: 'executivo',
+    status: 'ativo',
+    cargo: 'CEO',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=wfernandez',
     createdAt: `${CURRENT_YEAR}-01-01T00:00:00Z`,
     lastLogin: new Date().toISOString(),
@@ -51,8 +67,10 @@ export const MOCK_USERS: User[] = [
     id: 'usr-dir-1',
     email: 'diretor.property@addvalora.com',
     name: 'Paulo Cardoso',
-    profile: 'diretor',
+    profile: 'diretoria',
+    status: 'ativo',
     diretoria: 'Property / Construção',
+    cargo: 'Diretor',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=paulo',
     createdAt: `${CURRENT_YEAR}-01-20T14:30:00Z`,
     lastLogin: new Date().toISOString(),
@@ -61,8 +79,10 @@ export const MOCK_USERS: User[] = [
     id: 'usr-dir-2',
     email: 'diretor.transportes@addvalora.com',
     name: 'Clark Pellegrino',
-    profile: 'diretor',
+    profile: 'diretoria',
+    status: 'ativo',
     diretoria: 'Property / Transportes / Mecânica / Elétrica',
+    cargo: 'Diretor',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=clark',
     createdAt: `${CURRENT_YEAR}-01-20T14:30:00Z`,
     lastLogin: new Date().toISOString(),
@@ -71,8 +91,10 @@ export const MOCK_USERS: User[] = [
     id: 'usr-dir-3',
     email: 'diretor.garantia@addvalora.com',
     name: 'Rebeca Hicko',
-    profile: 'diretor',
+    profile: 'diretoria',
+    status: 'ativo',
     diretoria: 'Garantia / Fiança / Riscos',
+    cargo: 'Diretora',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=rebeca',
     createdAt: `${CURRENT_YEAR}-01-20T14:30:00Z`,
     lastLogin: new Date().toISOString(),
@@ -81,8 +103,10 @@ export const MOCK_USERS: User[] = [
     id: 'usr-dir-4',
     email: 'diretor.rcg@addvalora.com',
     name: 'Alex Guagliardi',
-    profile: 'diretor',
+    profile: 'diretoria',
+    status: 'ativo',
     diretoria: 'Responsabilidade Civil Geral (RCG)',
+    cargo: 'Diretor',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
     createdAt: `${CURRENT_YEAR}-01-20T14:30:00Z`,
     lastLogin: new Date().toISOString(),
@@ -91,8 +115,10 @@ export const MOCK_USERS: User[] = [
     id: 'usr-dir-5',
     email: 'diretor.rcp@addvalora.com',
     name: 'Everton Voleck',
-    profile: 'diretor',
+    profile: 'diretoria',
+    status: 'ativo',
     diretoria: 'Responsabilidade Civil Profissional (RCP)',
+    cargo: 'Diretor',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=everton',
     createdAt: `${CURRENT_YEAR}-01-20T14:30:00Z`,
     lastLogin: new Date().toISOString(),
@@ -103,6 +129,7 @@ export const MOCK_USERS: User[] = [
     email: 'usuario@addvalora.com',
     name: 'João Silva',
     profile: 'usuario',
+    status: 'ativo',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=joao',
     createdAt: `${CURRENT_YEAR}-03-10T11:00:00Z`,
     lastLogin: new Date().toISOString(),
@@ -111,15 +138,16 @@ export const MOCK_USERS: User[] = [
 
 // Senhas mock (em produção seria hash)
 export const MOCK_PASSWORDS: Record<string, string> = {
-  'admin@addvalora.com': 'Admin@2024',
-  'lhey@addvaloraglobal.com': 'CEO@2024',
-  'wfernandez@addvaloraglobal.com': 'CEO@2024',
-  'diretor.property@addvalora.com': 'Diretor@2024',
-  'diretor.transportes@addvalora.com': 'Diretor@2024',
-  'diretor.garantia@addvalora.com': 'Diretor@2024',
-  'diretor.rcg@addvalora.com': 'Diretor@2024',
-  'diretor.rcp@addvalora.com': 'Diretor@2024',
-  'usuario@addvalora.com': 'Usuario@2024',
+  'master@addvalora.com': 'Master@2026',
+  'admin@addvalora.com': 'Admin@2026',
+  'lhey@addvaloraglobal.com': 'CEO@2026',
+  'wfernandez@addvaloraglobal.com': 'CEO@2026',
+  'diretor.property@addvalora.com': 'Diretor@2026',
+  'diretor.transportes@addvalora.com': 'Diretor@2026',
+  'diretor.garantia@addvalora.com': 'Diretor@2026',
+  'diretor.rcg@addvalora.com': 'Diretor@2026',
+  'diretor.rcp@addvalora.com': 'Diretor@2026',
+  'usuario@addvalora.com': 'Usuario@2026',
 };
 
 // ============================================
@@ -231,8 +259,12 @@ export const STATUS_LABELS: Record<string, string> = {
   planejamento: 'Em Planejamento',
 };
 
-export const PROFILE_LABELS: Record<UserProfile, string> = {
+export const PROFILE_LABELS: Record<string, string> = {
+  master_admin: 'Master Admin',
   admin: 'Administrador',
-  diretor: 'Diretor',
+  executivo: 'Executivo',
+  diretoria: 'Diretoria',
+  coordenacao: 'Coordenação',
+  usuario_restrito: 'Usuário Restrito',
   usuario: 'Usuário',
 };

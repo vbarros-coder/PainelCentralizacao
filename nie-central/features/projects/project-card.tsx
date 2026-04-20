@@ -94,25 +94,25 @@ export function ProjectCard({ project, onToggleFavorite, index = 0 }: ProjectCar
                     categoryStyle.bg,
                     categoryStyle.text,
                     categoryStyle.border,
-                    'dark:' + categoryStyle.dark.bg,
-                    'dark:' + categoryStyle.dark.text,
-                    'dark:' + categoryStyle.dark.border
+                    categoryStyle.dark.bg,
+                    categoryStyle.dark.text,
+                    categoryStyle.dark.border
                   )}
                 >
                   {CATEGORY_LABELS[project.categoria]}
                 </Badge>
                 <Badge
                   variant="default"
-                  dot
                   className={cn(
                     statusStyle.bg,
                     statusStyle.text,
                     statusStyle.border,
-                    'dark:' + statusStyle.dark.bg,
-                    'dark:' + statusStyle.dark.text,
-                    'dark:' + statusStyle.dark.border
+                    statusStyle.dark.bg,
+                    statusStyle.dark.text,
+                    statusStyle.dark.border
                   )}
                 >
+                  <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", statusStyle.dot, statusStyle.dark.dot)} />
                   {STATUS_LABELS[project.status]}
                 </Badge>
               </div>

@@ -55,6 +55,12 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
 
+  // Turbopack root fix
+  // @ts-ignore
+  turbopack: {
+    root: '.',
+  },
+
   // Output
   output: 'standalone',
 };
