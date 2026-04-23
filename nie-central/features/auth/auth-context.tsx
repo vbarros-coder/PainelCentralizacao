@@ -10,7 +10,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, AuthSession, LoginCredentials, AuthState, UserProfile, UserStatus } from '@/types';
+import { User, AuthSession, LoginCredentials, AuthState, UserProfile, UserStatus, UserPresenceStatus } from '@/types';
 import { MOCK_USERS, MOCK_PASSWORDS } from '@/lib/mock-data';
 import { generateId, isClient } from '@/lib/utils';
 
