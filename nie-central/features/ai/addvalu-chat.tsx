@@ -21,6 +21,7 @@ import {
 import Image from 'next/image';
 import { useAuth } from '@/features/auth/auth-context';
 import { useProjects } from '@/features/projects/use-projects';
+import { Avatar } from '@/components/ui';
 import {
   runExecutiveCopilot,
   formatResponseForDisplay,
@@ -186,14 +187,12 @@ export function AddvaluChat() {
             {/* Header com Avatar da Addvalu */}
             <div className="bg-gradient-to-r from-[#0055A4] to-[#003d7a] p-4 flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 bg-white/10">
-                  <Image
-                    src="/addvalu-avatar.jpeg"
-                    alt="Addvalu"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+                <Avatar
+                  src="/Addvalu.jpeg"
+                  name="Addvalu"
+                  size="lg"
+                  className="border-2 border-white/30"
+                />
                 <div>
                   <h3 className="font-bold text-sm leading-none">Addvalu</h3>
                   <p className="text-[10px] text-white/70 mt-1 uppercase tracking-wider font-medium">Copiloto Executivo NIE</p>
@@ -226,15 +225,12 @@ export function AddvaluChat() {
                   )}
                 >
                   {msg.role === 'assistant' && (
-                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-[#0055A4]/20">
-                      <Image
-                        src="/addvalu-avatar.jpeg"
-                        alt="Addvalu"
-                        width={40}
-                        height={40}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
+                    <Avatar
+                      src="/Addvalu.jpeg"
+                      name="Addvalu"
+                      size="md"
+                      className="border-2 border-[#0055A4]/20"
+                    />
                   )}
                   
                   {msg.role === 'user' && (
@@ -268,15 +264,12 @@ export function AddvaluChat() {
               
               {isLoading && (
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#0055A4]/20">
-                    <Image
-                      src="/addvalu-avatar.jpeg"
-                      alt="Addvalu"
-                      width={40}
-                      height={40}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
+                  <Avatar
+                    src="/Addvalu.jpeg"
+                    name="Addvalu"
+                    size="md"
+                    className="border-2 border-[#0055A4]/20"
+                  />
                   <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl rounded-tl-none shadow-sm">
                     <div className="flex gap-1">
                       <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[#0055A4] rounded-full" />
@@ -378,11 +371,11 @@ export function AddvaluChat() {
             <X className="w-6 h-6 text-white" />
           ) : (
             <div className="relative w-full h-full">
-              <Image
-                src="/addvalu-avatar.jpeg"
-                alt="Addvalu"
-                fill
-                className="object-cover"
+              <Avatar
+                src="/Addvalu.jpeg"
+                name="Addvalu"
+                size="xl"
+                className="w-full h-full border-none"
               />
               <motion.div 
                 animate={{ scale: [1, 1.2, 1] }} 
