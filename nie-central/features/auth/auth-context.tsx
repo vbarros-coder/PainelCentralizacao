@@ -248,8 +248,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'Seu cadastro está em análise pela administração.' };
     }
 
-    if (user.status === 'inativo') {
-      return { success: false, error: 'Sua conta está desativada. Entre em contato com o suporte.' };
+    if (user.status === 'inativo' || user.status === 'bloqueado' || user.status === 'desligado') {
+      return { success: false, error: 'Seu acesso foi desativado. Entre em contato com o administrador.' };
     }
 
     // Automação: Atualizar último acesso centralizado

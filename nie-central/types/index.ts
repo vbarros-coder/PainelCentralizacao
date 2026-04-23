@@ -16,7 +16,34 @@ export type UserProfile =
   | 'usuario_restrito'
   | 'usuario'; // Compatibilidade
 
-export type UserStatus = 'ativo' | 'pendente' | 'inativo';
+export type UserStatus = 'ativo' | 'pendente' | 'inativo' | 'bloqueado' | 'desligado';
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+export type AuditActionType = 
+  | 'user_created'
+  | 'user_updated'
+  | 'user_blocked'
+  | 'user_unblocked'
+  | 'user_activated'
+  | 'user_deactivated'
+  | 'user_deleted'
+  | 'password_reset'
+  | 'role_changed';
+
+export interface AuditLog {
+  id: string;
+  actionType: AuditActionType;
+  targetUserId: string;
+  targetUserName: string;
+  performedBy: string;
+  performedByName: string;
+  timestamp: string;
+  details: string;
+  ipAddress?: string;
+}
 
 // ============================================
 // PRESENCE & STATUS
@@ -42,6 +69,8 @@ export interface User {
   avatar?: string;
   createdAt: string;
   lastLogin?: string;
+  deactivatedAt?: string;
+  deactivatedBy?: string;
   presence?: UserPresence;
 }
 
