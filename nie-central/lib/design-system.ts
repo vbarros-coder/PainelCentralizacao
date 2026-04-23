@@ -241,22 +241,22 @@ export const zIndex = {
   tooltip: 1800,
 } as const;
 
-// Category colors atualizados com identidade Addvalora
+// Category colors atualizados com identidade Addvalora (Azul e Laranja)
 export const categoryColors = {
-  estrategia: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dark: { bg: 'dark:bg-blue-950/30', text: 'dark:text-blue-300', border: 'dark:border-blue-800' } },
-  operacional: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dark: { bg: 'dark:bg-emerald-950/30', text: 'dark:text-emerald-300', border: 'dark:border-emerald-800' } },
-  tecnologia: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', dark: { bg: 'dark:bg-cyan-950/30', text: 'dark:text-cyan-300', border: 'dark:border-cyan-800' } },
-  financeiro: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dark: { bg: 'dark:bg-orange-950/30', text: 'dark:text-orange-300', border: 'dark:border-orange-800' } },
+  estrategia: { bg: 'bg-blue-50', text: 'text-[#0055A4]', border: 'border-blue-200', dark: { bg: 'dark:bg-blue-950/30', text: 'dark:text-blue-300', border: 'dark:border-blue-800' } },
+  operacional: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dark: { bg: 'dark:bg-slate-950/30', text: 'dark:text-slate-300', border: 'dark:border-slate-800' } },
+  tecnologia: { bg: 'bg-blue-50', text: 'text-[#0055A4]', border: 'border-blue-200', dark: { bg: 'dark:bg-blue-950/30', text: 'dark:text-blue-300', border: 'dark:border-blue-800' } },
+  financeiro: { bg: 'bg-orange-50', text: 'text-[#F47920]', border: 'border-orange-200', dark: { bg: 'dark:bg-orange-950/30', text: 'dark:text-orange-300', border: 'dark:border-orange-800' } },
   rh: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', dark: { bg: 'dark:bg-rose-950/30', text: 'dark:text-rose-300', border: 'dark:border-rose-800' } },
   marketing: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dark: { bg: 'dark:bg-amber-950/30', text: 'dark:text-amber-300', border: 'dark:border-amber-800' } },
-  juridico: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dark: { bg: 'dark:bg-slate-950/30', text: 'dark:text-slate-300', border: 'dark:border-slate-800' } },
+  juridico: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', dark: { bg: 'dark:bg-indigo-950/30', text: 'dark:text-indigo-300', border: 'dark:border-indigo-800' } },
 } as const;
 
-// Status colors atualizados
+// Status colors atualizados - Addvalora Azul e Laranja
 export const statusColors = {
-  ativo: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500', dark: { bg: 'dark:bg-emerald-950/30', text: 'dark:text-emerald-300', border: 'dark:border-emerald-800', dot: 'dark:bg-emerald-400' } },
-  pausado: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500', dark: { bg: 'dark:bg-orange-950/30', text: 'dark:text-orange-300', border: 'dark:border-orange-800', dot: 'dark:bg-orange-400' } },
-  concluido: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500', dark: { bg: 'dark:bg-blue-950/30', text: 'dark:text-blue-300', border: 'dark:border-blue-800', dot: 'dark:bg-blue-400' } },
+  ativo: { bg: 'bg-blue-50', text: 'text-[#0055A4]', border: 'border-blue-200', dot: 'bg-[#0055A4]', dark: { bg: 'dark:bg-blue-950/30', text: 'dark:text-blue-300', border: 'dark:border-blue-800', dot: 'dark:bg-blue-400' } },
+  pausado: { bg: 'bg-orange-50', text: 'text-[#F47920]', border: 'border-orange-200', dot: 'bg-[#F47920]', dark: { bg: 'dark:bg-orange-950/30', text: 'dark:text-orange-300', border: 'dark:border-orange-800', dot: 'dark:bg-orange-400' } },
+  concluido: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-500', dark: { bg: 'dark:bg-slate-950/30', text: 'dark:text-slate-300', border: 'dark:border-slate-800', dot: 'dark:bg-slate-400' } },
   cancelado: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', dark: { bg: 'dark:bg-red-950/30', text: 'dark:text-red-300', border: 'dark:border-red-800', dot: 'dark:bg-red-400' } },
   planejamento: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500', dark: { bg: 'dark:bg-amber-950/30', text: 'dark:text-amber-300', border: 'dark:border-amber-800', dot: 'dark:bg-amber-400' } },
 } as const;

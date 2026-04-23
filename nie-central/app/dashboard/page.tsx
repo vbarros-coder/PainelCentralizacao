@@ -22,11 +22,13 @@ function DashboardContent() {
   const {
     filteredProjects,
     featuredProjects,
+    userDestaques,
     filters,
     setFilters,
     sort,
     setSort,
     toggleFavorite,
+    toggleUserDestaque,
     isLoading,
     stats,
   } = useProjects();
@@ -84,6 +86,8 @@ function DashboardContent() {
                       key={project.id}
                       project={project}
                       onToggleFavorite={toggleFavorite}
+                      onToggleDestaque={toggleUserDestaque}
+                      isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
                   ))}
@@ -149,6 +153,8 @@ function DashboardContent() {
                       key={project.id}
                       project={project}
                       onToggleFavorite={toggleFavorite}
+                      onToggleDestaque={toggleUserDestaque}
+                      isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
                   ))}

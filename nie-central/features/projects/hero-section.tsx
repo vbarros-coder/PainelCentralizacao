@@ -14,7 +14,7 @@ export function HeroSection() {
     <section className="relative overflow-hidden">
       {/* Background Effects com cores Addvalora */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Gradient Orbs - Verde e Azul Addvalora */}
+        {/* Gradient Orbs - Azul e Laranja Addvalora (sem verde predominante) */}
         <motion.div
           animate={{
             x: [0, 100, 0],
@@ -26,7 +26,7 @@ export function HeroSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -top-40 -right-40 w-96 h-96 bg-[#00A651]/10 rounded-full blur-3xl"
+          className="absolute -top-40 -right-40 w-96 h-96 bg-[#0055A4]/10 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -39,7 +39,7 @@ export function HeroSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#0055A4]/10 rounded-full blur-3xl"
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#F47920]/10 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -51,7 +51,7 @@ export function HeroSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#F47920]/5 rounded-full blur-3xl"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0055A4]/5 rounded-full blur-3xl"
         />
 
         {/* Grid Pattern */}
@@ -109,14 +109,14 @@ export function HeroSection() {
           >
             Painel de Projetos{' '}
             <span className="relative">
-              <span className="bg-gradient-to-r from-[#00A651] to-[#0055A4] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#0055A4] to-[#F47920] bg-clip-text text-transparent">
                 NIE
               </span>
               <motion.span
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-[#00A651] to-[#0055A4] rounded-full origin-left"
+                className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-[#0055A4] to-[#F47920] rounded-full origin-left"
               />
             </span>
           </motion.h1>
@@ -139,9 +139,9 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
           >
             {[
-              { value: '17', label: 'Projetos Ativos', color: '#0055A4' },
-              { value: '5', label: 'Diretorias', color: '#00A651' },
-              { value: '100%', label: 'Seguro', color: '#F47920' },
+              { value: '32', label: 'Projetos Totais', color: '#0055A4' },
+              { value: '12', label: 'Diretorias', color: '#F47920' },
+              { value: '100%', label: 'Seguro', color: '#0055A4' },
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
