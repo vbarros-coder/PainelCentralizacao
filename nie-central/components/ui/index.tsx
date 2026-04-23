@@ -146,6 +146,7 @@ interface AvatarProps {
   name?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  objectPosition?: string;
 }
 
 const avatarSizes = {
@@ -156,13 +157,17 @@ const avatarSizes = {
   xl: 'w-16 h-16 text-xl',
 };
 
-export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
+export function Avatar({ src, name, size = 'md', className, objectPosition }: AvatarProps) {
   const initials = name
     ?.split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2) || '?';
+
+  // Heurística para centralizar a face em imagens de corpo inteiro (como a da Addvalu)
+  const isAddvaluImage = src?.includes('Addvalu') || src?.includes('avatar');
+  const defaultPosition = isAddvaluImage ? 'center 15%' : 'center';
 
   return (
     <div
@@ -179,6 +184,7 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
           src={src}
           alt={name}
           className="w-full h-full object-cover"
+          style={{ objectPosition: objectPosition || defaultPosition }}
           loading="lazy"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
