@@ -1,6 +1,6 @@
 /**
- * Addvalu Chat Interface
- * Componente de chat flutuante e elegante
+ * Addvalu Chat Interface - Versão Inteligente
+ * Componente de chat conectado aos dados reais do sistema
  */
 
 'use client';
@@ -11,20 +11,28 @@ import {
   MessageSquare, 
   X, 
   Send, 
-  MinusCircle, 
   Bot, 
-  User, 
   Trash2,
-  Maximize2,
+  ChevronDown,
   Sparkles,
-  ChevronDown
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  BarChart3
 } from 'lucide-react';
-import { aiService } from './ai-service';
-import { Message, AIContext } from './types';
+import { addvaluAI, AIResponse } from './addvalu-intelligence';
 import { useAuth } from '@/features/auth/auth-context';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  suggestedActions?: string[];
+}
 
 export function AddvaluChat() {
   const { user } = useAuth();
@@ -56,38 +64,37 @@ export function AddvaluChat() {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Carregar histórico inicial ou mensagem de boas-vindas
+  // Mensagem de boas-vindas inteligente
   useEffect(() => {
-    const history = aiService.getHistory();
-    if (history.length === 0) {
+    if (messages.length === 0 && user) {
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+      
       const welcomeMsg: Message = {
         id: 'welcome',
         role: 'assistant',
-        content: `Olá, ${user?.name.split(' ')[0]}. Eu sou a Addvalu, sua assistente inteligente. Como posso ajudar você hoje no painel de ${getPageName(pathname)}?`,
-        timestamp: Date.now()
+        content: `${greeting}${user?.name ? ', ' + user.name.split(' ')[0] : ''}. Sou a Addvalu, analista operacional do NIE. Estou conectada aos dados do sistema e posso ajudar com informações sobre projetos, análises de status ou insights sobre a operação.`,
+        timestamp: Date.now(),
+        suggestedActions: [
+          'Quais projetos estão ativos?',
+          'Me dê um resumo geral',
+          'Tem algum risco crítico?'
+        ]
       };
       setMessages([welcomeMsg]);
-    } else {
-      setMessages(history);
     }
-  }, [user, pathname]);
+  }, [user]);
 
-  const getPageName = (path: string) => {
-    if (path === '/dashboard') return 'Painel Principal';
-    if (path.includes('/projetos')) return 'Projetos';
-    if (path.includes('/usuarios')) return 'Gestão de Usuários';
-    if (path.includes('/admin')) return 'Administração';
-    return 'Sistema';
-  };
-
-  const handleSend = async (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent, quickMessage?: string) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    const messageText = quickMessage || input;
+    
+    if (!messageText.trim() || isLoading) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: messageText,
       timestamp: Date.now()
     };
 
@@ -95,33 +102,47 @@ export function AddvaluChat() {
     setInput('');
     setIsLoading(true);
 
-    const context: AIContext = {
-      pageName: getPageName(pathname),
-      userProfile: user?.profile || 'usuario',
-      userDiretoria: user?.diretoria,
-      visibleData: {} // Aqui poderiam ser injetados dados reais da tela
-    };
-
     try {
-      const response = await aiService.getResponse(input, context);
+      const response = await addvaluAI.processMessage(messageText, user || undefined);
+      
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response,
-        timestamp: Date.now()
+        content: response.text,
+        timestamp: Date.now(),
+        suggestedActions: response.suggestedActions
       };
+      
       setMessages(prev => [...prev, assistantMsg]);
     } catch (error) {
       console.error('Erro Addvalu:', error);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Tive um problema ao processar sua solicitação. Pode tentar novamente?',
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const clearChat = () => {
-    aiService.clearHistory();
     setMessages([]);
     setIsOpen(false);
+  };
+
+  // Renderizar conteúdo da mensagem com formatação
+  const renderMessageContent = (content: string) => {
+    // Processar negrito
+    const parts = content.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index} className="font-semibold text-gray-900 dark:text-white">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
   };
 
   return (
@@ -132,22 +153,17 @@ export function AddvaluChat() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="w-[380px] h-[520px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden mb-4"
+            className="w-[420px] h-[580px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
             <div className="bg-[#0055A4] p-4 flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden relative bg-white/10">
-                  <Image
-                    src="/Addvalu.jpeg"
-                    alt="Addvalu"
-                    fill
-                    className="object-cover object-[center_20%]"
-                  />
+                <div className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden relative bg-white/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-sm leading-none">Addvalu</h3>
-                  <p className="text-[10px] text-white/70 mt-1 uppercase tracking-wider font-medium">Assistente NIE</p>
+                  <p className="text-[10px] text-white/70 mt-1 uppercase tracking-wider font-medium">Analista Operacional NIE</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -172,48 +188,55 @@ export function AddvaluChat() {
                 <div 
                   key={msg.id} 
                   className={cn(
-                    "flex gap-3 max-w-[90%]",
+                    "flex gap-3",
                     msg.role === 'user' ? "ml-auto flex-row-reverse" : "flex-row"
                   )}
                 >
                   {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden relative flex-shrink-0 mt-1 border border-gray-200 dark:border-gray-700">
-                      <Image
-                        src="/Addvalu.jpeg"
-                        alt="Addvalu"
-                        fill
-                        className="object-cover object-[center_20%]"
-                      />
+                    <div className="w-8 h-8 rounded-full bg-[#0055A4] flex items-center justify-center flex-shrink-0 mt-1">
+                      <Sparkles className="w-4 h-4 text-white" />
                     </div>
                   )}
                   
                   <div className={cn(
-                    "flex flex-col",
+                    "flex flex-col max-w-[85%]",
                     msg.role === 'user' ? "items-end" : "items-start"
                   )}>
                     <div className={cn(
-                      "p-3 rounded-2xl text-sm shadow-sm",
+                      "p-3 rounded-2xl text-sm shadow-sm whitespace-pre-line",
                       msg.role === 'user' 
                         ? "bg-[#F47920] text-white rounded-tr-none" 
                         : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700 rounded-tl-none"
                     )}>
-                      {msg.content}
+                      {renderMessageContent(msg.content)}
                     </div>
+                    
+                    {/* Ações sugeridas */}
+                    {msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {msg.suggestedActions.map((action, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSend(undefined, action)}
+                            className="text-xs px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-[#0055A4] hover:bg-[#0055A4]/5 transition-colors"
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
                     <span className="text-[10px] text-gray-400 mt-1 px-1">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 </div>
               ))}
+              
               {isLoading && (
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full overflow-hidden relative flex-shrink-0 border border-gray-200 dark:border-gray-700">
-                    <Image
-                      src="/Addvalu.jpeg"
-                      alt="Addvalu"
-                      fill
-                      className="object-cover object-[center_20%]"
-                    />
+                  <div className="w-8 h-8 rounded-full bg-[#0055A4] flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl rounded-tl-none shadow-sm">
                     <div className="flex gap-1">
@@ -234,7 +257,7 @@ export function AddvaluChat() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Pergunte sobre este painel..."
+                  placeholder="Pergunte sobre projetos, status ou análises..."
                   className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#0055A4] transition-all"
                   disabled={isLoading}
                 />
@@ -246,8 +269,37 @@ export function AddvaluChat() {
                   <Send className="w-4 h-4" />
                 </button>
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-[10px] text-gray-400">Addvalu IA - Copiloto Corporativo</p>
+              
+              {/* Quick Actions */}
+              <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => handleSend(undefined, 'Resumo executivo')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0055A4]/10 text-[#0055A4] rounded-full text-xs font-medium hover:bg-[#0055A4]/20 transition-colors whitespace-nowrap"
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  Resumo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSend(undefined, 'Projetos ativos')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors whitespace-nowrap"
+                >
+                  <CheckCircle className="w-3 h-3" />
+                  Ativos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSend(undefined, 'Análise de riscos')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium hover:bg-orange-200 transition-colors whitespace-nowrap"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  Riscos
+                </button>
+              </div>
+              
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-[10px] text-gray-400">Addvalu IA - Dados em tempo real</p>
                 <button 
                   type="button"
                   onClick={clearChat}
@@ -293,13 +345,8 @@ export function AddvaluChat() {
           {isOpen && !isMinimized ? (
             <X className="w-6 h-6 text-white" />
           ) : (
-            <div className="relative w-10 h-10">
-               <Image
-                 src="/Addvalu.jpeg"
-                 alt="Addvalu"
-                 fill
-                 className="object-cover object-[center_20%] rounded-full"
-               />
+            <div className="relative w-10 h-10 flex items-center justify-center">
+               <Sparkles className="w-6 h-6 text-white" />
                <motion.div 
                  animate={{ scale: [1, 1.2, 1] }} 
                  transition={{ repeat: Infinity, duration: 2 }}
