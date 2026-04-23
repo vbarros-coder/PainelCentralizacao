@@ -18,6 +18,18 @@ export type UserProfile =
 
 export type UserStatus = 'ativo' | 'pendente' | 'inativo';
 
+// ============================================
+// PRESENCE & STATUS
+// ============================================
+
+export type UserPresenceStatus = 'available' | 'away' | 'busy' | 'offline';
+
+export interface UserPresence {
+  status: UserPresenceStatus;
+  manualStatus: UserPresenceStatus | null;
+  lastActive: number; // timestamp
+}
+
 export interface User {
   id: string;
   email: string;
@@ -30,6 +42,7 @@ export interface User {
   avatar?: string;
   createdAt: string;
   lastLogin?: string;
+  presence?: UserPresence;
 }
 
 export interface AuthSession {

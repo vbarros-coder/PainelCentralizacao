@@ -17,17 +17,6 @@ export const NEXT_YEAR = CURRENT_YEAR + 1;
 // ============================================
 
 export const MOCK_USERS: User[] = [
-  // Master Admin
-  {
-    id: 'usr-000',
-    email: 'master@addvalora.com',
-    name: 'Administrador Master',
-    profile: 'master_admin',
-    status: 'ativo',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=master',
-    createdAt: `${CURRENT_YEAR}-01-01T10:00:00Z`,
-    lastLogin: new Date().toISOString(),
-  },
   // Admin
   {
     id: 'usr-001',
@@ -43,7 +32,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-ceo-1',
     email: 'lhey@addvaloraglobal.com',
-    name: 'Lhey',
+    name: 'Luciana Hey',
     profile: 'executivo',
     status: 'ativo',
     cargo: 'CEO',
@@ -54,7 +43,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-ceo-2',
     email: 'wfernandez@addvaloraglobal.com',
-    name: 'W. Fernandez',
+    name: 'William Fernandez',
     profile: 'executivo',
     status: 'ativo',
     cargo: 'CEO',

@@ -52,6 +52,7 @@ interface AuthContextType extends AuthState {
   logAction: (action: string, category: string, details?: string, overrideUser?: User) => void;
   getLogs: () => any[];
   performBackup: () => Promise<{ success: boolean; date: string }>;
+  updateUserPresence: (status: UserPresenceStatus | null) => void;
   isLoading: boolean;
 }
 
@@ -566,6 +567,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.user]);
 
   // ============================================
+  // PRESENCE & STATUS
+  // ============================================
+
+  const updateUserPresence = useCallback((manualStatus: UserPresenceStatus | null) => {
+    if (!state.user) return;
+
+    const currentPresence = state.user.presence || {
+      status: 'available',
+      manualStatus: null,
+      lastActive: Date.now()
+    };
+
+    const newPresence = {
+      ...currentPresence,
+      manualStatus,
+      lastActive: Date.now(),
+      status: manualStatus || 'available'
+    };
+
+    updateUser({ presence: newPresence });
+  }, [state.user, updateUser]);
+
+  // Efeito para atualizar status automático (away/offline)
+  useEffect(() => {
+    if (!state.isAuthenticated || !state.user) return;
+
+    const interval = setInterval(() => {
+      const presence = state.user?.presence;
+      if (!presence || presence.manualStatus) return;
+
+      const idleTime = Date.now() - presence.lastActive;
+      let newStatus: UserPresenceStatus = 'available';
+
+      if (idleTime > 15 * 60 * 1000) newStatus = 'offline';
+      else if (idleTime > 5 * 60 * 1000) newStatus = 'away';
+
+      if (newStatus !== presence.status) {
+        updateUser({ 
+          presence: { ...presence, status: newStatus } 
+        });
+      }
+    }, 60000); // Checar a cada minuto
+
+    return () => clearInterval(interval);
+  }, [state.isAuthenticated, state.user, updateUser]);
+
+  // Efeito para detectar atividade do usuário
+  useEffect(() => {
+    if (!state.isAuthenticated || !state.user) return;
+
+    const handleActivity = () => {
+      const presence = state.user?.presence;
+      if (presence?.manualStatus) return; // Status manual tem prioridade
+
+      const now = Date.now();
+      // Throttle de atualização para cada 30 segundos
+      if (!presence || now - presence.lastActive > 30000) {
+        updateUser({
+          presence: {
+            status: 'available',
+            manualStatus: null,
+            lastActive: now
+          }
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+    };
+  }, [state.isAuthenticated, state.user, updateUser]);
+
+  // ============================================
   // SUPER ADMIN HELPER
   // ============================================
 
@@ -577,7 +657,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       state.user?.name.toLowerCase().includes(name.toLowerCase())
     );
 
-    return emailMatch || nameMatch || state.user.profile === 'master_admin';
+    return emailMatch || nameMatch;
   }, [state.user]);
 
   // ============================================
@@ -625,6 +705,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logAction,
     getLogs,
     performBackup,
+    updateUserPresence,
     isLoading: state.isLoading,
   };
 

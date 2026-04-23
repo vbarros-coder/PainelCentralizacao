@@ -19,7 +19,8 @@ import {
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/auth-context';
-import { Button, Badge, Avatar } from '@/components/ui';
+import { Button, Badge, Avatar, Tooltip } from '@/components/ui';
+import { UserStatusSelector, UserStatusBadge, formatLastActive } from '@/components/ui/user-status';
 
 interface TopbarProps {
   isSidebarCollapsed: boolean;
@@ -227,6 +228,11 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
           {/* Divider */}
           <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-2" />
 
+          {/* User Presence Selector */}
+          <div className="hidden md:block">
+            <UserStatusSelector />
+          </div>
+
           {/* User Menu */}
           <motion.div
             whileHover={{ scale: 1.02, backgroundColor: 'rgba(0, 85, 164, 0.05)' }}
@@ -241,11 +247,19 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
                 {user?.email}
               </p>
             </div>
-            <Avatar
-              src={user?.avatar}
-              name={user?.name}
-              size="sm"
-            />
+            <div className="relative">
+              <Avatar
+                src={user?.avatar}
+                name={user?.name}
+                size="sm"
+              />
+              <div className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-gray-900 p-0.5 rounded-full">
+                <UserStatusBadge 
+                  status={user?.presence?.status || 'offline'} 
+                  size="sm" 
+                />
+              </div>
+            </div>
           </motion.div>
         </div>
       </motion.header>

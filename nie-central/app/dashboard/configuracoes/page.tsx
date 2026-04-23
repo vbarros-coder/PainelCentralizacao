@@ -11,12 +11,13 @@ import { Settings, User, Bell, Shield, Moon, Sun, Mail, Camera, Upload } from 'l
 import { useTheme } from 'next-themes';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button, Avatar } from '@/components/ui';
+import { UserStatusSelector } from '@/components/ui/user-status';
 import { useAuth } from '@/features/auth/auth-context';
 import { cn } from '@/lib/utils';
 import { PROFILE_LABELS } from '@/lib/mock-data';
 
 function ConfiguracoesContent() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -26,6 +27,12 @@ function ConfiguracoesContent() {
   });
   const [previewImage, setPreviewImage] = useState(user?.avatar || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user?.avatar) {
+      setPreviewImage(user.avatar);
+    }
+  }, [user?.avatar]);
 
   useEffect(() => {
     setMounted(true);
@@ -110,9 +117,12 @@ function ConfiguracoesContent() {
               </div>
               
               <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {user?.name}
-                </h2>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {user?.name}
+                  </h2>
+                  <UserStatusSelector />
+                </div>
                 <p className="text-gray-500 dark:text-gray-400">{user?.email}</p>
                 <p className="text-sm text-[#00A651] mt-1">
                   {user?.profile && PROFILE_LABELS[user.profile]}
@@ -288,11 +298,7 @@ function ConfiguracoesContent() {
                 <Button 
                   variant="danger" 
                   size="sm"
-                  onClick={() => {
-                    if (confirm('Deseja realmente sair?')) {
-                      window.location.href = '/login';
-                    }
-                  }}
+                  onClick={() => logout()}
                 >
                   Sair do Sistema
                 </Button>

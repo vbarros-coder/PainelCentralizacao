@@ -8,11 +8,21 @@
 import { motion } from 'framer-motion';
 import { Users, Mail, Shield, User } from 'lucide-react';
 import { ProtectedRoute } from '@/features/auth/protected-route';
-import { Card, Avatar } from '@/components/ui';
-import { MOCK_USERS, PROFILE_LABELS } from '@/lib/mock-data';
+import { Card, Avatar, Tooltip } from '@/components/ui';
+import { UserStatusBadge, formatLastActive } from '@/components/ui/user-status';
+import { PROFILE_LABELS } from '@/lib/mock-data';
+import { useAuth } from '@/features/auth/auth-context';
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 
 function EquipeContent() {
+  const { getAllUsers } = useAuth();
+  
+  // Usar getAllUsers para pegar os usuários reais (incluindo fotos atualizadas e status)
+  const users = useMemo(() => {
+    return getAllUsers();
+  }, [getAllUsers]);
+
   return (
     <div className="min-h-screen bg-transparent p-6">
       <div className="max-w-7xl mx-auto">
@@ -30,25 +40,44 @@ function EquipeContent() {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_USERS.map((user, index) => (
+          {users.map((user, index) => (
             <motion.div
               key={user.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <Avatar
-                    src={user.avatar}
-                    name={user.name}
-                    size="lg"
-                  />
+              <Card className="p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <Avatar
+                      src={user.avatar}
+                      name={user.name}
+                      size="lg"
+                    />
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-gray-900 p-0.5 rounded-full">
+                      <UserStatusBadge 
+                        status={user.presence?.status || 'offline'} 
+                        size="md" 
+                      />
+                    </div>
+                  </div>
                   
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {user.name}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                        {user.name}
+                      </h3>
+                      <Tooltip content={formatLastActive(user.presence?.lastActive)}>
+                        <div className="flex-shrink-0">
+                          <UserStatusBadge 
+                            status={user.presence?.status || 'offline'} 
+                            size="sm"
+                            showLabel
+                          />
+                        </div>
+                      </Tooltip>
+                    </div>
                     
                     <div className="flex items-center gap-2 mt-1">
                       <User className="w-4 h-4 text-gray-400" />
@@ -64,15 +93,15 @@ function EquipeContent() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      <Mail className="w-4 h-4" />
+                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400 truncate">
+                      <Mail className="w-4 h-4 flex-shrink-0" />
                       {user.email}
                     </div>
 
                     {user.diretoria && (
                       <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        <Shield className="w-4 h-4" />
-                        {user.diretoria}
+                        <Shield className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{user.diretoria}</span>
                       </div>
                     )}
                   </div>
