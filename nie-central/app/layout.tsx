@@ -7,6 +7,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/features/auth/auth-context';
+import { PresenceProvider } from '@/features/presence/presence-context';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/ui/toast';
 
@@ -69,9 +70,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
+            <PresenceProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </PresenceProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

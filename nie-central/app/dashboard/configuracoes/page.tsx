@@ -13,6 +13,8 @@ import { ProtectedRoute } from '@/features/auth/protected-route';
 import { Card, Button, Avatar } from '@/components/ui';
 import { UserStatusSelector } from '@/components/ui/user-status';
 import { useAuth } from '@/features/auth/auth-context';
+import { ProfileEditModal } from '@/features/profile/profile-edit-modal';
+import { ChangePasswordModal } from '@/features/profile/change-password-modal';
 import { cn } from '@/lib/utils';
 import { PROFILE_LABELS } from '@/lib/mock-data';
 
@@ -20,6 +22,8 @@ function ConfiguracoesContent() {
   const { user, updateUser, logout } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -133,7 +137,7 @@ function ConfiguracoesContent() {
                 </p>
               </div>
 
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setIsProfileModalOpen(true)}>
                 Editar Perfil
               </Button>
             </div>
@@ -287,7 +291,7 @@ function ConfiguracoesContent() {
                   <p className="font-medium text-gray-900 dark:text-white text-sm">Senha de Acesso</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Recomendamos trocar a senha a cada 90 dias</p>
                 </div>
-                <Button variant="outline" size="sm">Alterar Senha</Button>
+                <Button variant="outline" size="sm" onClick={() => setIsPasswordModalOpen(true)}>Alterar Senha</Button>
               </div>
               
               <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -307,6 +311,16 @@ function ConfiguracoesContent() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Modais */}
+      <ProfileEditModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+      />
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
     </div>
   );
 }
