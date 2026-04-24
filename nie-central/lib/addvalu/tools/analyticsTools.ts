@@ -26,7 +26,7 @@ export function groupProjectsByDirectorate(projects: Project[]) {
     const dir = p.diretoria || 'Sem Diretoria';
     if (!groups[dir]) groups[dir] = [];
     groups[dir].push({
-      name: p.name,
+      name: p.nome,
       status: p.status,
       progress: p.progresso
     });
@@ -46,7 +46,7 @@ export function groupProjectsByOwner(projects: Project[]) {
     const owner = p.responsavel || 'Sem Responsável';
     if (!groups[owner]) groups[owner] = [];
     groups[owner].push({
-      name: p.name,
+      name: p.nome,
       status: p.status,
       progress: p.progresso
     });

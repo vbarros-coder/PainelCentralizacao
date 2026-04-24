@@ -9,7 +9,7 @@ export function getCompletedProjects(projects: Project[], user: User) {
     count: items.length,
     items: items.map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.nome,
       status: p.status,
       directorate: p.diretoria,
       owner: p.responsavel
@@ -25,7 +25,7 @@ export function getActiveProjects(projects: Project[], user: User) {
     count: items.length,
     items: items.map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.nome,
       status: p.status,
       progress: p.progresso,
       directorate: p.diretoria,
@@ -42,7 +42,7 @@ export function getPlanningProjects(projects: Project[], user: User) {
     count: items.length,
     items: items.map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.nome,
       status: p.status,
       directorate: p.diretoria,
       owner: p.responsavel
@@ -59,7 +59,7 @@ export function getDelayedProjects(projects: Project[], user: User) {
     count: items.length,
     items: items.map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.nome,
       status: p.status,
       progress: p.progresso,
       directorate: p.diretoria,
@@ -77,7 +77,7 @@ export function getCriticalProjects(projects: Project[], user: User) {
     count: items.length,
     items: items.map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.nome,
       status: p.status,
       progress: p.progresso,
       directorate: p.diretoria,

@@ -9,7 +9,7 @@ export function getPanels(projects: Project[], user: User) {
     count: items.length,
     items: items.map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.nome,
       status: p.status,
       owner: p.responsavel
     }))
