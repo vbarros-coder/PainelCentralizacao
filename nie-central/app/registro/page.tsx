@@ -34,23 +34,15 @@ const DIRETORIAS = [
 ];
 
 const CARGOS = [
-  'adm-nie',
-  'executivo-luciana',
-  'executivo-william',
   'diretor',
   'coordenacao',
-  'operacional',
-  'visualizador'
+  'operacional'
 ];
 
 const CARGO_LABELS: Record<string, string> = {
-  'adm-nie': 'ADM NIE',
-  'executivo-luciana': 'Executivo (Luciana)',
-  'executivo-william': 'Executivo (William)',
   'diretor': 'Diretor',
   'coordenacao': 'Coordenação',
-  'operacional': 'Operacional',
-  'visualizador': 'Visualizador'
+  'operacional': 'Operacional'
 };
 
 export default function RegistroPage() {

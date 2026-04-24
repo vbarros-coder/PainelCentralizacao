@@ -8,11 +8,19 @@ import { Intent } from './systemPrompt';
 export function detectIntent(question: string): Intent {
   const q = question.toLowerCase().trim();
 
-  // Saudações
-  if (/^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|e aí|tudo bem|oi addvalu)/i.test(q)) {
-    return 'greeting';
+  // 1. Prioridade Máxima: Entity & Project Lookup (TOOL FIRST)
+  // Se o usuário pergunta por um nome específico que parece ser um projeto ou painel
+  if (q.length > 3 && !q.includes(' ') || /(projeto|painel|automação|módulo|produto)/i.test(q)) {
+    if (/(status|situação|como está|andamento)/i.test(q)) {
+      return 'project_status_query';
+    }
+    if (/(painel|dashboard|visão)/i.test(q)) {
+      return 'panel_lookup';
+    }
+    return 'project_lookup';
   }
 
+  // 2. Explicit Tool Intents
   // Disponibilidade de usuários
   if (/(quem está disponível|quem está online|quem está ocupado|presença|status da equipe)/i.test(q)) {
     return 'availability_query';
@@ -28,13 +36,14 @@ export function detectIntent(question: string): Intent {
     return 'risk_analysis';
   }
 
+  // 3. Analytical Intents
   // Comparação
   if (/(compare|comparar|comparação|versus|vs)/i.test(q)) {
     return 'comparison';
   }
 
   // Tendências
-  if (/(tendência|evolução|como está indo|progresso|andamento)/i.test(q)) {
+  if (/(tendência|evolução|como está indo|andamento)/i.test(q)) {
     return 'trend_analysis';
   }
 
@@ -43,7 +52,8 @@ export function detectIntent(question: string): Intent {
     return 'executive_summary';
   }
 
-  // Follow-up (perguntas curtas começando com "e" ou referências a contexto anterior)
+  // 4. Follow-up & Navigation
+  // Follow-up
   if (/^(e |e em |e o |e a |qual |quais |como |onde )/i.test(q) && q.length < 50) {
     return 'follow_up';
   }
@@ -58,9 +68,9 @@ export function detectIntent(question: string): Intent {
     return 'filter';
   }
 
-  // Análise operacional (padrão para perguntas sobre projetos específicos)
-  if (/(projeto|status|situação|detalhes|informações sobre)/i.test(q)) {
-    return 'operational_analysis';
+  // Saudações (Prioridade baixa para evitar capturar nomes de projetos como saudações)
+  if (/^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|e aí|tudo bem)$/i.test(q)) {
+    return 'greeting';
   }
 
   return 'unknown';

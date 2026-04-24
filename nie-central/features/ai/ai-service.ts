@@ -66,11 +66,11 @@ class AddvaluService {
 
     // Lógica de Geração de Resposta Baseada no ToolResult
     if (intent === 'getExecutiveSummary' && toolResult) {
-      const { active, avgProgress, delayed } = toolResult;
+      const { active } = toolResult;
       return `### Panorama Executivo NIE
-Temos atualmente **${active} projetos ativos** com um progresso médio de **${avgProgress}%**. 
+Temos atualmente **${active} projetos ativos** na plataforma. 
 
-**Recomendação:** Focar na aceleração dos ${delayed} projetos com progresso abaixo da média para garantir as entregas do trimestre.`;
+**Recomendação:** Acompanhar o status dos projetos ativos para garantir o cumprimento dos cronogramas estabelecidos.`;
     }
 
     if (intent === 'summarizeRisks' && toolResult) {

@@ -20,6 +20,8 @@ import { Project } from '@/types';
 import { categoryColors, statusColors } from '@/lib/design-system';
 import { CATEGORY_LABELS, STATUS_LABELS } from '@/lib/mock-data';
 
+import { useProjects } from '@/features/projects/use-projects';
+
 interface ProjectCardProps {
   project: Project;
   onAccess?: (project: Project) => void;
@@ -32,10 +34,17 @@ export function ProjectCard({
   index = 0 
 }: ProjectCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { toggleFavorite } = useProjects();
 
   const categoryStyle = categoryColors[project.categoria];
   const statusStyle = statusColors[project.status];
   const hasLink = project.link && project.link !== '#';
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(project.id);
+  };
 
   const handleAccess = (e: React.MouseEvent) => {
     if (!hasLink && onAccess) {
@@ -83,9 +92,21 @@ export function ProjectCard({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Destaque Badge - Apenas selo oficial */}
-          {project.destaque && (
-            <div className="absolute top-3 right-3 z-10">
+          {/* Header Actions - Favorito e Destaque */}
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+            <button
+              onClick={handleFavorite}
+              className={cn(
+                "p-1.5 rounded-full transition-all duration-200",
+                project.favorito 
+                  ? "bg-amber-100 text-amber-500" 
+                  : "bg-black/5 text-gray-400 hover:bg-black/10 hover:text-amber-500"
+              )}
+            >
+              <Star className={cn("w-4 h-4", project.favorito && "fill-current")} />
+            </button>
+
+            {project.destaque && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -97,15 +118,12 @@ export function ProjectCard({
                   className="shadow-sm flex items-center gap-1 bg-[#0055A4]/10 text-[#0055A4] border-[#0055A4]/20"
                 >
                   <Sparkles className="w-3 h-3" />
-                  Em destaque
+                  Destaque
                 </Badge>
               </motion.div>
-            </div>
-          )}
+            )}
 
-          {/* Indicador de sem link */}
-          {!hasLink && (
-            <div className="absolute top-3 right-3 z-10">
+            {!hasLink && (
               <Badge 
                 variant="default" 
                 size="sm" 
@@ -114,8 +132,8 @@ export function ProjectCard({
                 <Lock className="w-3 h-3" />
                 Em breve
               </Badge>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Header */}
           <div className="p-5 flex-1">
@@ -160,29 +178,6 @@ export function ProjectCard({
             <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
               {truncateText(project.descricao, 120)}
             </p>
-
-            {/* Progress Bar */}
-            {project.progresso !== undefined && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                  <span>Progresso</span>
-                  <span className="font-medium text-[#0055A4]">{project.progresso}%</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${project.progresso}%` }}
-                    transition={{ duration: 0.8, delay: index * 0.05 + 0.2 }}
-                    className={cn(
-                      'h-full rounded-full',
-                      project.progresso >= 80 && 'bg-[#0055A4]',
-                      project.progresso >= 50 && project.progresso < 80 && 'bg-[#0055A4]/80',
-                      project.progresso < 50 && 'bg-[#F47920]'
-                    )}
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Footer / Action */}

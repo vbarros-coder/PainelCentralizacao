@@ -45,7 +45,7 @@ function DashboardContent() {
 
   // Separar Painéis de Projetos usando o campo tipo
   const painelProjects = filteredProjects.filter(p => p.tipo === 'painel');
-  const projetoProjects = filteredProjects.filter(p => p.tipo === 'projeto');
+  const featuredPainels = featuredProjects.filter(p => p.tipo === 'painel');
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -59,7 +59,7 @@ function DashboardContent() {
             Olá, <span className="text-[#0055A4]">{user?.name}</span>!
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Bem-vindo ao Painel de Projetos NIE.
+            Bem-vindo ao Painel NIE.
           </p>
         </motion.div>
       </div>
@@ -74,26 +74,26 @@ function DashboardContent() {
             sort={sort}
             onFilterChange={setFilters}
             onSortChange={setSort}
-            resultCount={filteredProjects.length}
+            resultCount={painelProjects.length}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
           />
 
-          {/* Featured Projects Section */}
-          {!filters.search && !filters.apenasFavoritos && featuredProjects.length > 0 && (
+          {/* Featured Painels Section */}
+          {!filters.search && !filters.apenasFavoritos && featuredPainels.length > 0 && (
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Projetos em Destaque
+                  Painéis em Destaque
                 </h2>
                 <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs rounded-full">
-                  {featuredProjects.length}
+                  {featuredPainels.length}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
-                  {featuredProjects.map((project, index) => (
+                  {featuredPainels.map((project, index) => (
                     <ProjectCard
                       key={project.id}
                       project={project}
@@ -111,7 +111,7 @@ function DashboardContent() {
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Painéis
+                  Todos os Painéis
                 </h2>
                 <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/30 text-[#0055A4] dark:text-blue-300 text-xs rounded-full">
                   {painelProjects.length}
@@ -138,38 +138,6 @@ function DashboardContent() {
             </section>
           )}
 
-          {/* Projetos Section */}
-          {projetoProjects.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Projetos
-                </h2>
-                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
-                  {projetoProjects.length}
-                </span>
-              </div>
-
-              <div className={cn(
-                'grid gap-6',
-                viewMode === 'grid'
-                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                  : 'grid-cols-1'
-              )}>
-                <AnimatePresence mode="popLayout">
-                  {projetoProjects.map((project, index) => (
-                    <ProjectCard
-                      key={project.id}
-                      project={project}
-                      onAccess={handleAccess}
-                      index={index}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            </section>
-          )}
-
             <ComingSoonModal
             isOpen={isComingSoonOpen}
             onClose={() => setIsComingSoonOpen(false)}
@@ -177,7 +145,7 @@ function DashboardContent() {
           />
 
           {/* Empty State */}
-          {!isLoading && filteredProjects.length === 0 && (
+          {!isLoading && painelProjects.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

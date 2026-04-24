@@ -43,21 +43,6 @@ export function generatePriorityRecommendations(projects: Project[]): Priority[]
     });
   }
 
-  // 3. Projetos em destaque com baixo progresso
-  const destaquesCriticos = projects.filter(
-    (p) =>
-      p.destaque && p.status === 'ativo' && p.progresso && p.progresso < 50
-  );
-  if (destaquesCriticos.length > 0) {
-    priorities.push({
-      rank: rank++,
-      title: 'Acelerar projetos em destaque',
-      description: `${destaquesCriticos.length} projeto(s) prioritário(s) com progresso baixo`,
-      action: 'Alocar recursos e remover impedimentos',
-      severity: 'critical',
-    });
-  }
-
   // 4. Diretoria com maior carga
   const byDirectorate: Record<
     string,
@@ -91,20 +76,6 @@ export function generatePriorityRecommendations(projects: Project[]): Priority[]
     });
   }
 
-  // 5. Projetos próximos da conclusão
-  const quaseConcluidos = projects.filter(
-    (p) => p.status === 'ativo' && p.progresso && p.progresso >= 80
-  );
-  if (quaseConcluidos.length > 0) {
-    priorities.push({
-      rank: rank++,
-      title: 'Finalizar projetos próximos da entrega',
-      description: `${quaseConcluidos.length} projeto(s) com 80%+ de progresso`,
-      action: 'Focar em entregas para fechar ciclo',
-      severity: 'medium',
-    });
-  }
-
   return priorities;
 }
 
@@ -120,7 +91,6 @@ export function generateDirectorateRecommendations(
 
   const ativos = dirProjects.filter((p) => p.status === 'ativo');
   const pausados = dirProjects.filter((p) => p.status === 'pausado');
-  const baixoProgresso = ativos.filter((p) => p.progresso && p.progresso < 30);
 
   if (ativos.length > 5) {
     priorities.push({
@@ -138,16 +108,6 @@ export function generateDirectorateRecommendations(
       title: 'Retomar projetos pausados',
       description: `${pausados.length} projeto(s) aguardando retomada`,
       action: 'Definir plano de ação para retomada',
-      severity: 'medium',
-    });
-  }
-
-  if (baixoProgresso.length > 2) {
-    priorities.push({
-      rank: 3,
-      title: 'Acelerar projetos parados',
-      description: `${baixoProgresso.length} projetos com progresso baixo`,
-      action: 'Identificar bloqueios e remover impedimentos',
       severity: 'medium',
     });
   }

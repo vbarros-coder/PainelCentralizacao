@@ -149,7 +149,6 @@ export interface Project {
   favorito: boolean;
   createdAt: string;
   updatedAt: string;
-  progresso?: number;
   dataInicio?: string;
   dataFim?: string;
   equipe?: string[];

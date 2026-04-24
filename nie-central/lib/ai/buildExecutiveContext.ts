@@ -20,7 +20,6 @@ export interface ExecutiveContext {
     planningProjects: number;
     pausedProjects: number;
     featuredProjects: number;
-    averageProgress: number;
   };
   projects: Project[];
   criticalProjects: Project[];
@@ -40,7 +39,6 @@ interface DirectorateSummary {
   completed: number;
   paused: number;
   planning: number;
-  averageProgress: number;
 }
 
 interface OwnerSummary {
@@ -76,16 +74,6 @@ export function buildExecutiveContext({
   const pausedProjects = projects.filter((p) => p.status === 'pausado');
   const featuredProjectsList = projects.filter((p) => p.destaque);
 
-  // Progresso médio
-  const projectsWithProgress = activeProjects.filter((p) => p.progresso !== undefined);
-  const averageProgress =
-    projectsWithProgress.length > 0
-      ? Math.round(
-          projectsWithProgress.reduce((acc, p) => acc + (p.progresso || 0), 0) /
-            projectsWithProgress.length
-        )
-      : 0;
-
   // Agrupar por diretoria
   const byDirectorateMap = new Map<string, DirectorateSummary>();
   for (const p of projects) {
@@ -98,7 +86,6 @@ export function buildExecutiveContext({
         completed: 0,
         paused: 0,
         planning: 0,
-        averageProgress: 0,
       });
     }
     const summary = byDirectorateMap.get(dir)!;
@@ -107,16 +94,6 @@ export function buildExecutiveContext({
     if (p.status === 'concluido') summary.completed++;
     if (p.status === 'pausado') summary.paused++;
     if (p.status === 'planejamento') summary.planning++;
-  }
-
-  // Calcular progresso médio por diretoria
-  for (const [dir, summary] of byDirectorateMap) {
-    const dirProjects = projects.filter((p) => p.diretoria === dir && p.progresso !== undefined);
-    if (dirProjects.length > 0) {
-      summary.averageProgress = Math.round(
-        dirProjects.reduce((acc, p) => acc + (p.progresso || 0), 0) / dirProjects.length
-      );
-    }
   }
 
   const byDirectorate = Array.from(byDirectorateMap.values()).sort(
@@ -145,13 +122,12 @@ export function buildExecutiveContext({
     .sort((a, b) => b.active - a.active)
     .slice(0, 10);
 
-  // Projetos críticos (baixo progresso, em destaque, pausados)
+  // Projetos críticos (em destaque ou pausados)
   const criticalProjects = projects
     .filter(
       (p) =>
-        (p.destaque && p.progresso && p.progresso < 50) ||
-        p.status === 'pausado' ||
-        (p.progresso && p.progresso < 20 && p.status === 'ativo')
+        p.destaque ||
+        p.status === 'pausado'
     )
     .slice(0, 10);
 
@@ -172,7 +148,6 @@ export function buildExecutiveContext({
       planningProjects: planningProjects.length,
       pausedProjects: pausedProjects.length,
       featuredProjects: featuredProjectsList.length,
-      averageProgress,
     },
     projects: responseMode === 'operational' ? projects.slice(0, 20) : projects.slice(0, 10),
     criticalProjects,
@@ -206,7 +181,6 @@ export function formatContextForAI(context: ExecutiveContext): string {
   sections.push(`- Concluídos: ${context.summary.completedProjects}`);
   sections.push(`- Em planejamento: ${context.summary.planningProjects}`);
   sections.push(`- Pausados: ${context.summary.pausedProjects}`);
-  sections.push(`- Progresso médio: ${context.summary.averageProgress}%`);
   sections.push('');
 
   // Insights
@@ -240,7 +214,7 @@ export function formatContextForAI(context: ExecutiveContext): string {
   if (context.featuredProjectsList.length > 0) {
     sections.push(`PROJETOS EM DESTAQUE:`);
     context.featuredProjectsList.forEach((p) => {
-      sections.push(`- ${p.nome} (${p.diretoria}) - ${p.progresso || 0}%`);
+      sections.push(`- ${p.nome} (${p.diretoria})`);
     });
     sections.push('');
   }

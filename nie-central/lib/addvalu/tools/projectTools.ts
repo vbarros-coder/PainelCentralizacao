@@ -27,7 +27,6 @@ export function getActiveProjects(projects: Project[], user: User) {
       id: p.id,
       name: p.nome,
       status: p.status,
-      progress: p.progresso,
       directorate: p.diretoria,
       owner: p.responsavel
     }))
@@ -51,27 +50,18 @@ export function getPlanningProjects(projects: Project[], user: User) {
 }
 
 export function getDelayedProjects(projects: Project[], user: User) {
-  const authorized = filterAIContextByUserAccess(projects, user);
-  // Consideramos atrasados projetos ativos com progresso abaixo de 50%
-  const items = authorized.filter(p => p.status === 'ativo' && (p.progresso || 0) < 50);
   return {
     tool: 'getDelayedProjects',
-    count: items.length,
-    items: items.map(p => ({
-      id: p.id,
-      name: p.nome,
-      status: p.status,
-      progress: p.progresso,
-      directorate: p.diretoria,
-      owner: p.responsavel
-    }))
+    count: 0,
+    items: [],
+    message: 'Métricas de progresso desativadas.'
   };
 }
 
 export function getCriticalProjects(projects: Project[], user: User) {
   const authorized = filterAIContextByUserAccess(projects, user);
-  // Considerando críticos como pausados ou ativos com progresso muito baixo (ex: < 30%)
-  const items = authorized.filter(p => p.status === 'pausado' || (p.status === 'ativo' && (p.progresso || 0) < 30));
+  // Considerando críticos apenas como pausados
+  const items = authorized.filter(p => p.status === 'pausado');
   return {
     tool: 'getCriticalProjects',
     count: items.length,
@@ -79,7 +69,6 @@ export function getCriticalProjects(projects: Project[], user: User) {
       id: p.id,
       name: p.nome,
       status: p.status,
-      progress: p.progresso,
       directorate: p.diretoria,
       owner: p.responsavel
     }))

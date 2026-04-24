@@ -12,8 +12,6 @@ export interface OperationalSnapshot {
     total: number;
     active: number;
     completed: number;
-    delayed: number;
-    critical: number;
     byDirectorate: Record<string, number>;
     byOwner: Record<string, number>;
   };
@@ -57,14 +55,11 @@ export function filterAIContextByUserAccess(data: Project[], user: User): Projec
 
 export function buildExecutiveSummary(projects: Project[]) {
   const active = projects.filter(p => p.status === 'ativo');
-  const delayed = active.filter(p => (p.progresso || 0) < 50); // Simplificação para exemplo
   
   return {
     total: projects.length,
     active: active.length,
-    completed: projects.filter(p => p.status === 'concluido').length,
-    delayed: delayed.length,
-    avgProgress: Math.round(active.reduce((acc, p) => acc + (p.progresso || 0), 0) / (active.length || 1))
+    completed: projects.filter(p => p.status === 'concluido').length
   };
 }
 
@@ -103,7 +98,7 @@ export interface ConversationMemory {
 
 export interface OperationalEvent {
   eventId: string;
-  eventType: 'create' | 'update' | 'delete' | 'status_change' | 'progress_change';
+  eventType: 'create' | 'update' | 'delete' | 'status_change';
   entityType: 'project' | 'user' | 'panel';
   entityId: string;
   before?: any;

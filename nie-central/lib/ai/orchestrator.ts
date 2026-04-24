@@ -13,6 +13,21 @@ import {
   updateConversationMemory,
 } from './conversationMemory';
 
+/**
+ * Entity Resolver - Localiza projetos ou painéis citados na pergunta
+ */
+function resolveEntityMention(question: string, projects: Project[]): Project | null {
+  const q = question.toLowerCase().trim();
+  
+  // Busca exata ou parcial por nome de projeto
+  const project = projects.find(p => 
+    q.includes(p.nome.toLowerCase()) || 
+    p.nome.toLowerCase().includes(q)
+  );
+
+  return project || null;
+}
+
 export interface OrchestratorInput {
   question: string;
   projects: Project[];
@@ -49,13 +64,16 @@ export async function runExecutiveCopilot({
   const intent = detectIntent(question);
   const responseMode = detectResponseMode(intent);
 
+  // 1.1 Entity Lookup (Prioridade Máxima)
+  const resolvedEntity = resolveEntityMention(question, projects);
+
   // 2. Atualizar memória
   const updatedMemory = updateConversationMemory(memory, question, intent);
 
-  // 3. Filtrar projetos relevantes (se houver diretoria na memória ou pergunta)
-  let relevantProjects = [...projects];
+  // 3. Filtrar projetos relevantes
+  let relevantProjects = resolvedEntity ? [resolvedEntity] : [...projects];
   
-  if (updatedMemory.lastDirectorate) {
+  if (!resolvedEntity && updatedMemory.lastDirectorate) {
     const directorateProjects = projects.filter(
       (p) =>
         p.diretoria.toLowerCase().includes(updatedMemory.lastDirectorate!.toLowerCase())
@@ -68,15 +86,15 @@ export async function runExecutiveCopilot({
   // 4. Construir contexto executivo
   const context = buildExecutiveContext({
     question,
-    intent,
-    responseMode,
+    intent: resolvedEntity ? 'project_lookup' : intent,
+    responseMode: resolvedEntity ? 'operational' : responseMode,
     projects: relevantProjects,
     users,
     memory: updatedMemory,
   });
 
   // 5. Gerar resposta inteligente (sem API externa)
-  const answer = generateSmartResponse(context, userName);
+  const answer = generateSmartResponse(context, userName, resolvedEntity);
 
   const processingTime = Date.now() - startTime;
 
@@ -98,105 +116,82 @@ export async function runExecutiveCopilot({
  */
 function generateSmartResponse(
   context: ReturnType<typeof buildExecutiveContext>,
-  userName?: string
+  userName?: string,
+  resolvedEntity?: Project | null
 ): string {
-  const { intent, responseMode, summary, insights, alerts, priorities, featuredProjectsList } = context;
+  const { intent, responseMode, summary, insights, alerts, priorities } = context;
+
+  // Prioridade 1: Entity Lookup Resolvido
+  if (resolvedEntity) {
+    return `**${resolvedEntity.nome}**
+Status: ${resolvedEntity.status.toUpperCase()}
+Diretoria: ${resolvedEntity.diretoria}
+Responsável: ${resolvedEntity.responsavel || 'Não definido'}
+
+${resolvedEntity.descricao ? `Descrição: ${resolvedEntity.descricao}` : ''}
+${resolvedEntity.link ? `Link: ${resolvedEntity.link}` : ''}`;
+  }
 
   const greeting = userName ? `Olá ${userName.split(' ')[0]}, ` : '';
 
   switch (intent) {
+    case 'project_lookup':
+    case 'project_status_query':
+    case 'entity_reference':
+      if (context.projects.length > 0) {
+        const p = context.projects[0];
+        return `**${p.nome}**
+Status: ${p.status.toUpperCase()}
+Responsável: ${p.responsavel || 'Não definido'}
+Diretoria: ${p.diretoria}`;
+      }
+      return `Não localizei detalhes específicos para "${context.question}". Pode confirmar o nome do projeto?`;
+
     case 'greeting':
-      return `${greeting}sou a Addvalu, sua analista executiva virtual do NIE. Estou conectada aos dados do sistema e posso ajudar com:
-
-• Resumo executivo da operação
-• Análise de riscos e gargalos
-• Prioridades de ação
-• Status de projetos específicos
-• Disponibilidade da equipe
-
-O que você precisa saber?`;
+      return `Addvalu Copiloto Operacional. Informe o nome de um projeto ou selecione uma análise:
+• **Resumo Executivo**
+• **Riscos e Gargalos**
+• **Prioridades**
+• **Status da Equipe**`;
 
     case 'executive_summary':
-      return `${greeting}**Situação Atual do Portfólio**
+      return `**Panorama Operacional**
+Total: ${summary.totalProjects} | Ativos: ${summary.activeProjects} | Concluídos: ${summary.completedProjects}
 
-Temos **${summary.totalProjects} projetos** no sistema:
-• **${summary.activeProjects}** ativos (progresso médio: ${summary.averageProgress}%)
-• **${summary.completedProjects}** concluídos
-• **${summary.planningProjects}** em planejamento
-• **${summary.pausedProjects}** pausados
+${insights.slice(0, 3).map((i) => `• ${i}`).join('\n')}
 
-${insights.length > 0 ? `\n**Pontos de Atenção:**\n${insights.slice(0, 3).map((i) => `• ${i}`).join('\n')}` : ''}
-
-${priorities.length > 0 ? `\n**Prioridades:**\n${priorities.slice(0, 3).join('\n')}` : ''}`;
+**Principais Prioridades:**
+${priorities.slice(0, 2).join('\n')}`;
 
     case 'risk_analysis':
       const risks = insights.filter((i) => i.toLowerCase().includes('risco') || i.toLowerCase().includes('atraso'));
-      return `${greeting}**Análise de Riscos**
+      return `**Riscos e Alertas**
+${risks.length > 0 ? risks.slice(0, 5).map((r) => `• ${r}`).join('\n') : 'Sem riscos críticos identificados.'}
 
-${risks.length > 0
-  ? risks.slice(0, 5).map((r) => `• ${r}`).join('\n')
-  : insights.length > 0
-  ? insights.slice(0, 5).map((i) => `• ${i}`).join('\n')
-  : 'Nenhum risco crítico identificado no momento.'}
-
-${alerts.length > 0 ? `\n**Alertas:**\n${alerts.map((a) => `⚠️ ${a}`).join('\n')}` : ''}`;
+${alerts.map((a) => `⚠️ ${a}`).join('\n')}`;
 
     case 'priority_recommendation':
-      return `${greeting}**Prioridades de Ação**
-
-${priorities.length > 0
-  ? priorities.slice(0, 5).join('\n')
-  : 'Com base na análise atual, recomendo focar em:\n\n1. Projetos em destaque com baixo progresso\n2. Iniciar projetos que estão há muito tempo em planejamento\n3. Retomar projetos pausados com alta prioridade'}`;
+      return `**Ações Prioritárias**
+${priorities.slice(0, 5).join('\n')}`;
 
     case 'availability_query':
-      return `${greeting}**Disponibilidade da Equipe**
-
-Consulte a aba "Equipe" no menu lateral para visualizar em tempo real quem está disponível, ocupado ou ausente.
-
-Posso também ajudar a identificar responsáveis por projetos específicos se precisar.`;
+      return `**Status da Equipe**
+Acesse o menu "Equipe" para visão em tempo real. Posso filtrar por responsável se desejar.`;
 
     case 'list':
-      const projectList = context.projects.slice(0, 10);
-      return `${greeting}**Projetos Encontrados (${context.projects.length})**
-
-${projectList.map((p, i) => `${i + 1}. **${p.nome}** - ${p.diretoria} (${p.progresso || 0}%)`).join('\n')}
-
-${context.projects.length > 10 ? `\n... e mais ${context.projects.length - 10} projetos.` : ''}`;
-
-    case 'follow_up':
-      if (context.conversationMemory.lastDirectorate) {
-        const dirProjects = context.projects.filter(
-          (p) => p.diretoria === context.conversationMemory.lastDirectorate
-        );
-        return `${greeting}**${context.conversationMemory.lastDirectorate}**
-
-${dirProjects.length} projetos nesta diretoria:
-• ${dirProjects.filter((p) => p.status === 'ativo').length} ativos
-• ${dirProjects.filter((p) => p.status === 'concluido').length} concluídos
-
-${dirProjects
-  .filter((p) => p.status === 'ativo')
-  .slice(0, 5)
-  .map((p) => `• ${p.nome} (${p.progresso || 0}%)`)
-  .join('\n')}`;
-      }
-      return `${greeting}Pode especificar melhor o que você gostaria de saber? Posso analisar por diretoria, responsável ou status.`;
+      return `**Projetos (${context.projects.length})**
+${context.projects.slice(0, 10).map((p) => `• **${p.nome}** [${p.status}]`).join('\n')}`;
 
     default:
-      // Resposta padrão inteligente
-      return `${greeting}**Análise do Cenário**
+      if (summary.totalProjects > 0) {
+        return `**Análise de Dados**
+Portfólio com ${summary.totalProjects} projetos (${summary.activeProjects} ativos).
 
-${summary.totalProjects > 0
-  ? `Portfólio com ${summary.totalProjects} projetos. ${summary.activeProjects} ativos, ${summary.completedProjects} concluídos.`
-  : 'Não encontrei projetos com os critérios informados.'}
+${insights.slice(0, 2).map((i) => `• ${i}`).join('\n')}
 
-${insights.length > 0 ? `\n**Observações:**\n${insights.slice(0, 3).map((i) => `• ${i}`).join('\n')}` : ''}
-
-${responseMode === 'executive' && priorities.length > 0
-  ? `\n**Recomendação:** ${priorities[0]}`
-  : ''}
-
-Posso detalhar qualquer um desses pontos. O que seria mais útil agora?`;
+Deseja detalhes de algum projeto específico?`;
+      }
+      return `Não identifiquei a referência exata. Pode me dizer qual projeto ou diretoria deseja consultar?`;
   }
 }
 

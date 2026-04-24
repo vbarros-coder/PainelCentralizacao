@@ -59,7 +59,6 @@ export function ImportProjectsModal({ isOpen, onClose, onImport }: ImportProject
               link: row['Link'] || row['link'] || row['URL'] || '#',
               destaque: row['Destaque']?.toString().toLowerCase() === 'sim' || false,
               favorito: false,
-              progresso: parseInt(row['Progresso'] || row['progresso'] || '0') || 0,
               dataInicio: formatDate(row['Data Início'] || row['Data Inicio'] || row['dataInicio']),
               dataFim: formatDate(row['Data Fim'] || row['dataFim'] || row['Prazo']),
               createdAt: new Date().toISOString(),

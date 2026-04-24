@@ -34,18 +34,6 @@ export function generateOperationalInsights(projects: Project[]): Insight[] {
     });
   }
 
-  // 3. Projetos com baixo progresso
-  const baixoProgresso = projects.filter(
-    (p) => p.progresso && p.progresso < 30 && p.status === 'ativo'
-  );
-  if (baixoProgresso.length > 3) {
-    insights.push({
-      type: 'attention',
-      message: `${baixoProgresso.length} projetos ativos com progresso abaixo de 30% - revisar priorização`,
-      severity: 'medium',
-    });
-  }
-
   // 4. Análise por diretoria - concentração
   const diretorias = [...new Set(projects.map((p) => p.diretoria))];
   const diretoriaComMaisAtivos = diretorias
@@ -70,18 +58,6 @@ export function generateOperationalInsights(projects: Project[]): Insight[] {
       type: 'info',
       message: `${concluidos.length} projetos já concluídos - operação com entregas consistentes`,
       severity: 'low',
-    });
-  }
-
-  // 6. Projetos em destaque com baixo progresso
-  const destaquesBaixoProgresso = projects.filter(
-    (p) => p.destaque && p.progresso && p.progresso < 50 && p.status === 'ativo'
-  );
-  if (destaquesBaixoProgresso.length > 0) {
-    insights.push({
-      type: 'risk',
-      message: `${destaquesBaixoProgresso.length} projeto(s) em destaque com progresso abaixo de 50%`,
-      severity: 'high',
     });
   }
 

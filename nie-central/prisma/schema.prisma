@@ -69,8 +69,6 @@ model OperationalSnapshot {
   pausedProjects    Int
   
   // Métricas de risco
-  criticalProjects  Int
-  delayedProjects   Int
   staleProjects     Int // Sem atualização recente
   
   // Distribuição
@@ -102,7 +100,7 @@ model ProjectChangeLog {
   projectName     String
   
   // O que mudou
-  fieldChanged    String   // 'status', 'progresso', 'responsavel', etc
+  fieldChanged    String   // 'status', 'responsavel', etc
   oldValue        String?
   newValue        String?
   
@@ -286,7 +284,6 @@ enum EventType {
   PROJECT_REMOVED
   
   STATUS_CHANGED
-  PROGRESS_CHANGED
   RESPONSIBLE_CHANGED
   DIRECTORATE_CHANGED
   COORDINATION_CHANGED

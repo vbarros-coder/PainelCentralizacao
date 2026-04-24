@@ -173,8 +173,7 @@ function formatProjectList(projects: Project[]): string {
     const statusIcon = p.status === 'ativo' ? '●' : 
                        p.status === 'concluido' ? '✓' : 
                        p.status === 'planejamento' ? '○' : '◐';
-    const progress = p.progresso ? `(${p.progresso}%)` : '';
-    return `${statusIcon} **${p.nome}** - ${p.diretoria} ${progress}`;
+    return `${statusIcon} **${p.nome}** - ${p.diretoria}`;
   });
   
   if (projects.length > 10) {
@@ -187,7 +186,6 @@ function formatProjectList(projects: Project[]): string {
 function analyzeRisks(projects: Project[]): string {
   const emPlanejamento = projects.filter(p => p.status === 'planejamento');
   const pausados = projects.filter(p => p.status === 'pausado');
-  const baixoProgresso = projects.filter(p => p.progresso && p.progresso < 30 && p.status === 'ativo');
   
   const issues: string[] = [];
   
@@ -197,10 +195,6 @@ function analyzeRisks(projects: Project[]): string {
   
   if (pausados.length > 0) {
     issues.push(`${pausados.length} projeto(s) pausado(s) que podem precisar de atenção`);
-  }
-  
-  if (baixoProgresso.length > 3) {
-    issues.push(`${baixoProgresso.length} projetos com progresso abaixo de 30% - revisar priorização`);
   }
   
   // Análise por diretoria
@@ -312,10 +306,6 @@ ${formatProjectList(filtered)}`,
       const planejamento = projects.filter(p => p.status === 'planejamento');
       const pausados = projects.filter(p => p.status === 'pausado');
       
-      const progressoMedio = ativos.length > 0
-        ? Math.round(ativos.reduce((acc, p) => acc + (p.progresso || 0), 0) / ativos.length)
-        : 0;
-      
       // Projetos em destaque
       const destaques = projects.filter(p => p.destaque);
       
@@ -323,7 +313,7 @@ ${formatProjectList(filtered)}`,
         text: `**Portfólio de Projetos NIE - Resumo Executivo**
 
 **Situação Atual:**
-• ${ativos.length} projetos ativos (progresso médio: ${progressoMedio}%)
+• ${ativos.length} projetos ativos
 • ${concluidos.length} projetos concluídos
 • ${planejamento.length} em planejamento
 • ${pausados.length} pausados
@@ -331,12 +321,11 @@ ${formatProjectList(filtered)}`,
 **Projetos em Destaque:**
 ${destaques.slice(0, 5).map(p => `• ${p.nome} (${p.diretoria})`).join('\n')}
 
-**Recomendação:** ${progressoMedio < 50 ? 'Atenção ao progresso médio abaixo de 50%. Revisar priorização.' : 'Progresso saudável. Manter ritmo de entregas.'}`,
+**Recomendação:** Acompanhar o status dos projetos ativos para garantir o cumprimento dos cronogramas estabelecidos.`,
         data: { 
           ativos: ativos.length, 
           concluidos: concluidos.length, 
-          planejamento: planejamento.length,
-          progressoMedio 
+          planejamento: planejamento.length
         },
         suggestedActions: [
           'Ver detalhes dos projetos ativos',
@@ -386,7 +375,7 @@ ${analyzeRisks(projects)}
         text: `**Diretoria ${intent.entities.diretoria} - ${filtered.length} projetos**
 
 **Ativos (${ativos.length}):**
-${ativos.slice(0, 5).map(p => `• ${p.nome} (${p.progresso || 0}%)`).join('\n')}${ativos.length > 5 ? '\n...' : ''}
+${ativos.slice(0, 5).map(p => `• ${p.nome}`).join('\n')}${ativos.length > 5 ? '\n...' : ''}
 
 **Concluídos (${concluidos.length}):**
 ${concluidos.slice(0, 3).map(p => `• ${p.nome}`).join('\n')}${concluidos.length > 3 ? '\n...' : ''}
