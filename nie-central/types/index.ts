@@ -88,6 +88,7 @@ export interface User {
   allowedDirectorates?: string[]; // Diretorias adicionais permitidas
   allowedCoordinations?: string[]; // Coordenações adicionais permitidas
   allowedProjects?: string[]; // Projetos específicos permitidos
+  allowedPanels?: string[]; // Painéis específicos permitidos
 }
 
 export interface AuthSession {

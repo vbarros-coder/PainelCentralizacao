@@ -36,10 +36,89 @@ export function canManageUsers(user: User | null): boolean {
 }
 
 /**
- * Verifica se o usuário pode acessar o painel administrativo
+ * Verifica se o usuário pode acessar o painel de gerenciamento
  */
-export function canAccessAdminPanel(user: User | null): boolean {
-  return isGlobalAdmin(user);
+export function canAccessManagePanel(user: User | null): boolean {
+  if (!user) return false;
+  
+  // Admins Globais (ADM NIE, Luciana, WF)
+  if (isGlobalAdmin(user)) return true;
+  
+  // Diretores podem gerenciar sua própria diretoria
+  if (user.role === 'diretor') return true;
+  
+  return false;
+}
+
+/**
+ * Verifica se o gerente pode gerenciar o usuário alvo
+ */
+export function canManageUser(manager: User | null, targetUser: User): boolean {
+  if (!manager) return false;
+  
+  // Admins Globais gerenciam todos
+  if (isGlobalAdmin(manager)) return true;
+  
+  // Diretores gerenciam apenas usuários da sua diretoria
+  if (manager.role === 'diretor' && manager.diretoria === targetUser.diretoria) {
+    // Diretores NÃO podem gerenciar Admins Globais
+    if (isGlobalAdmin(targetUser)) return false;
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Verifica se o gerente pode atribuir um cargo específico
+ */
+export function canAssignRole(manager: User | null, role: UserRole): boolean {
+  if (!manager) return false;
+  
+  // Admins Globais podem atribuir qualquer cargo
+  if (isGlobalAdmin(manager)) return true;
+  
+  // Diretores podem atribuir cargos apenas de nível inferior ou igual na sua diretoria
+  if (manager.role === 'diretor') {
+    const restrictedRoles: UserRole[] = ['adm-nie', 'executivo-luciana', 'executivo-william'];
+    return !restrictedRoles.includes(role);
+  }
+  
+  return false;
+}
+
+/**
+ * Verifica se o gerente pode atribuir uma diretoria
+ */
+export function canAssignDirectorate(manager: User | null, directorate: string): boolean {
+  if (!manager) return false;
+  if (isGlobalAdmin(manager)) return true;
+  
+  // Diretores só podem atribuir sua própria diretoria
+  if (manager.role === 'diretor' && manager.diretoria === directorate) return true;
+  
+  return false;
+}
+
+/**
+ * Verifica se o gerente pode atribuir um projeto
+ */
+export function canAssignProject(manager: User | null, project: Project): boolean {
+  if (!manager) return false;
+  if (isGlobalAdmin(manager)) return true;
+  
+  // Diretores só podem atribuir projetos da sua diretoria
+  if (manager.role === 'diretor' && manager.diretoria === project.diretoria) return true;
+  
+  return false;
+}
+
+/**
+ * Verifica se o gerente pode atribuir um painel
+ */
+export function canAssignPanel(manager: User | null, panel: Project): boolean {
+  // A lógica de painel segue a mesma de projeto no sistema atual
+  return canAssignProject(manager, panel);
 }
 
 // ============================================

@@ -1,14 +1,21 @@
-/**
- * Addvalu AI Service
- * Camada de integração com o modelo de IA e gerenciamento de contexto
- */
-
-import { Message, AIContext, ADDVALU_SYSTEM_PROMPT } from './types';
+import { User } from '@/types';
 import { generateId } from '@/lib/utils';
+import { orchestrator } from './orchestrator';
+import { ADDVALU_SYSTEM_PROMPT } from './orchestrator';
+import { AddvaluContext } from './types';
+
+// Interface para a mensagem de chat
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+  data?: any;
+}
 
 class AddvaluService {
   private static instance: AddvaluService;
-  private history: Message[] = [];
+  private history: ChatMessage[] = [];
 
   private constructor() {}
 
@@ -20,80 +27,90 @@ class AddvaluService {
   }
 
   /**
-   * Simula o processamento da IA localmente ou via API
-   * Para esta implementação, usaremos um motor de regras inteligente + simulador de LLM
+   * Processa a mensagem do usuário usando o novo Orquestrador e Inteligência
    */
-  public async getResponse(prompt: string, context: AIContext): Promise<string> {
-    // Simular delay de processamento
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  public async getResponse(prompt: string, user: User): Promise<ChatMessage> {
+    // 1. Obter Contexto Estruturado (Data + Permission + Intelligence + Memory)
+    const context = await orchestrator.buildContext(prompt, user);
 
-    const userMessage: Message = {
-      id: generateId(),
-      role: 'user',
-      content: prompt,
-      timestamp: Date.now()
-    };
-    this.history.push(userMessage);
+    // 2. Chamar "Modelo" (Simulado com Raciocínio Baseado em Contexto)
+    // Em produção, aqui enviamos o ADDVALU_SYSTEM_PROMPT + context para GPT-4/Gemini
+    const responseText = await this.simulateAIReasoning(context);
 
-    // Lógica de resposta contextual baseada na página e dados
-    let response = "";
-
-    // 1. Identificar intenção e contexto
-    const lowerPrompt = prompt.toLowerCase();
-
-    // Respostas informais e saudações
-    const informalGreetings = ['oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'blz', 'beleza', 'tudo bem', 'hey'];
-    const confirmations = ['ok', 'entendi', 'vlw', 'valeu', 'obrigado', 'obrigada', 'show', 'top', 'kkk', 'rsrs'];
-    
-    if (informalGreetings.some(g => lowerPrompt.includes(g) && prompt.length < 15)) {
-      response = `Olá! Sou a Addvalu. Como posso ajudar você hoje no ${context.pageName}?`;
-    }
-    else if (confirmations.some(c => lowerPrompt.includes(c) && prompt.length < 10)) {
-      response = "Disponha! Estou aqui se precisar de qualquer outra análise ou ajuda com o sistema.";
-    }
-    else if (lowerPrompt.includes('quem é você') || lowerPrompt.includes('o que você faz')) {
-      response = "Eu sou a Addvalu, sua assistente inteligente na Central de Projetos NIE. Posso ajudar você a interpretar indicadores, gerar relatórios automáticos da sua diretoria e orientar sua navegação.";
-    }
-    else if (lowerPrompt.includes('relatório') || lowerPrompt.includes('gerar') || lowerPrompt.includes('resumo')) {
-      if (context.userProfile === 'usuario') {
-        response = "Desculpe, mas seu perfil de acesso não permite a geração de relatórios administrativos. Por favor, entre em contato com seu gestor.";
-      } else {
-        const scope = context.userDiretoria || 'Geral';
-        response = `Com base nos dados atuais do painel, gerei um resumo executivo para a diretoria ${scope}: Temos 12 projetos ativos, com 85% de progresso médio. Identifiquei 2 pontos de atenção em atraso técnico. Gostaria que eu detalhasse os riscos desses projetos?`;
-      }
-    }
-    else if (lowerPrompt.includes('atenção') || lowerPrompt.includes('atraso') || lowerPrompt.includes('risco')) {
-      response = "Analisando o contexto: O projeto 'Painel de Controle de Prazos' apresenta um leve desvio no cronograma da fase 3. Recomendo revisar a alocação da equipe técnica. Deseja que eu envie um alerta para o coordenador responsável?";
-    }
-    else if (lowerPrompt.includes('ajuda') || lowerPrompt.includes('não entendi') || lowerPrompt.includes('explica melhor')) {
-      response = `Claro! Atualmente você está em ${context.pageName}. Como ${context.userProfile}, você pode ver os dados da diretoria ${context.userDiretoria || 'Geral'}. O que especificamente você gostaria que eu detalhasse? Posso falar sobre indicadores, projetos ou permissões.`;
-    }
-    else if (context.pageName.includes('Painel') || context.pageName.includes('Dashboard')) {
-      response = `Como assistente Addvalu, analisei os dados do seu Painel. Atualmente, a diretoria ${context.userDiretoria || 'Geral'} apresenta indicadores estáveis. Notei que você aplicou alguns filtros recentemente; deseja que eu faça uma projeção de entrega com base neles?`;
-    }
-    else {
-      response = "Entendi sua mensagem. Como assistente inteligente, estou monitorando os dados em tempo real. Sua solicitação foi registrada e posso ajudar com análises mais profundas se você desejar. O que mais podemos fazer hoje?";
-    }
-
-    // Adicionar ao histórico
-    const assistantMessage: Message = {
+    const assistantMessage: ChatMessage = {
       id: generateId(),
       role: 'assistant',
-      content: response,
-      timestamp: Date.now()
+      content: responseText,
+      timestamp: Date.now(),
+      data: {
+        intent: context.intent,
+        summary: context.summary,
+        alerts: context.alerts,
+        insights: context.insights
+      }
     };
+
+    this.history.push({ id: generateId(), role: 'user', content: prompt, timestamp: Date.now() });
     this.history.push(assistantMessage);
 
-    return response;
+    return assistantMessage;
   }
 
-  public getHistory(): Message[] {
-    return this.history;
+  /**
+   * Simula o raciocínio da IA baseado no contexto estruturado
+   * Implementa as regras do System Prompt: Direto, Sem "Entendi", Focado em Riscos
+   */
+  private async simulateAIReasoning(context: AddvaluContext): Promise<string> {
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    const { intent, summary, insights, alerts, projects } = context;
+
+    // Lógica de Geração de Resposta Baseada em Intenção
+    if (intent === 'executive_summary') {
+      return `### Panorama Executivo NIE
+Temos atualmente **${summary.active} projetos ativos** com um progresso médio de **${summary.avgProgress}%**. 
+
+**Riscos Identificados:**
+${alerts.length > 0 ? alerts.map(a => `- ⚠️ ${a}`).join('\n') : '- ✅ Nenhuma criticidade imediata detectada.'}
+
+**Insights Operacionais:**
+${insights.map(i => `- ${i}`).join('\n')}
+
+**Recomendação:** Focar na aceleração dos ${summary.delayed} projetos com progresso abaixo da média para garantir as entregas do trimestre.`;
+    }
+
+    if (intent === 'risk_analysis') {
+      return `### Análise de Riscos e Atrasos
+Identifiquei **${summary.delayed} pontos de atenção** que requerem ação imediata.
+
+**Projetos Críticos:**
+${projects.filter(p => (p.progresso || 0) < 30).slice(0, 3).map(p => `- **${p.nome}**: ${p.progresso}% (Diretoria: ${p.diretoria})`).join('\n')}
+
+**Impacto Operacional:**
+${insights[0] || 'A carga de trabalho está distribuída, mas o baixo progresso em projetos chave pode impactar o SLA global.'}
+
+Deseja que eu detalhe o plano de mitigação para algum desses projetos?`;
+    }
+
+    if (intent === 'group_by_directorate') {
+      return `### Distribuição por Diretoria
+Aqui está o detalhamento solicitado:
+
+${Object.entries(context.summary.byDirectorate || {}).map(([dir, count]) => `- **${dir}**: ${count} projetos`).join('\n') || '- Dados de agrupamento em processamento.'}
+
+Notei que a diretoria **Property** concentra o maior volume de projetos ativos no momento.`;
+    }
+
+    // Resposta Padrão (Agente Proativo)
+    return `Atualmente gerencio **${summary.total} itens** no seu escopo de acesso. 
+    
+${alerts[0] ? `**Alerta Prioritário:** ${alerts[0]}` : 'Tudo operando dentro da normalidade.'}
+
+O que você gostaria de analisar especificamente? Posso detalhar riscos, agrupar por diretoria ou fornecer um resumo executivo.`;
   }
 
-  public clearHistory(): void {
-    this.history = [];
-  }
+  public getHistory() { return this.history; }
+  public clearHistory() { this.history = []; }
 }
 
 export const aiService = AddvaluService.getInstance();

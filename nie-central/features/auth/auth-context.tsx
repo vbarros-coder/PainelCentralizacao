@@ -16,6 +16,8 @@ import { generateId, isClient } from '@/lib/utils';
 import { 
   isGlobalAdmin, 
   canManageUsers, 
+  canAccessManagePanel,
+  canManageUser,
   canAccessDirectorate, 
   canAccessCoordination,
   canViewProject,
@@ -59,6 +61,8 @@ interface AuthContextType extends AuthState {
   isGlobalAdmin: () => boolean;
   canManageUsers: () => boolean;
   canAccessAdminPanel: () => boolean;
+  canAccessManagePanel: () => boolean;
+  canManageUser: (targetUser: User) => boolean;
   canAccessDirectorate: (directorate: string) => boolean;
   canAccessCoordination: (coordination: string) => boolean;
   canViewProject: (project: Project) => boolean;
@@ -745,9 +749,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkPermission,
     // Novas permissões hierárquicas
     isGlobalAdmin: isGlobalAdminFn,
-    canManageUsers: canManageUsersFn,
-    canAccessAdminPanel: canAccessAdminPanelFn,
-    canAccessDirectorate: canAccessDirectorateFn,
+    canManageUsers: () => canManageUsers(state.user),
+    canAccessAdminPanel: () => isGlobalAdmin(state.user),
+    canAccessManagePanel: () => canAccessManagePanel(state.user),
+    canManageUser: (targetUser: User) => canManageUser(state.user, targetUser),
+    canAccessDirectorate: (directorate: string) => canAccessDirectorate(state.user, directorate),
     canAccessCoordination: canAccessCoordinationFn,
     canViewProject: canViewProjectFn,
     filterProjectsByAccess: filterProjectsByAccessFn,

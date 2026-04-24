@@ -1,0 +1,362 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// OPERATIONAL MEMORY - ADDVALU EVENTS
+// ============================================
+
+model AddvaluEvent {
+  id              String   @id @default(cuid())
+  eventId         String   @unique // UUID do evento
+  eventType       EventType
+  entityType      EntityType
+  entityId        String   // ID do projeto/usuário afetado
+  
+  // Dados antes e depois (JSON para flexibilidade)
+  before          Json?    // Estado anterior
+  after           Json?    // Novo estado
+  changes         String[] // Lista de campos alterados
+  
+  // Contexto
+  changedBy       String   // ID do usuário que fez a mudança
+  changedByName   String   // Nome do usuário
+  changedByEmail  String   // Email do usuário
+  
+  // Metadados
+  severity        Severity @default(info)
+  description     String   // Descrição legível do evento
+  
+  // Processamento pela Addvalu
+  processedByAddvalu Boolean @default(false)
+  processedAt     DateTime?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Índices
+  @@index([entityType, entityId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([processedByAddvalu])
+  @@index([severity])
+  
+  @@map("addvalu_events")
+}
+
+// ============================================
+// OPERATIONAL SNAPSHOTS - Estado do sistema
+// ============================================
+
+model OperationalSnapshot {
+  id              String   @id @default(cuid())
+  snapshotId      String   @unique
+  
+  // Métricas do portfólio
+  totalProjects   Int
+  activeProjects  Int
+  completedProjects Int
+  planningProjects  Int
+  pausedProjects    Int
+  
+  // Métricas de risco
+  criticalProjects  Int
+  delayedProjects   Int
+  staleProjects     Int // Sem atualização recente
+  
+  // Distribuição
+  byDirectorate   Json     // { diretoria: count }
+  byStatus        Json     // { status: count }
+  byOwner         Json     // { owner: count }
+  
+  // Contexto
+  generatedBy     String   // ID do usuário/contexto
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime? // Cache expiration
+  
+  @@index([createdAt])
+  @@index([expiresAt])
+  
+  @@map("operational_snapshots")
+}
+
+// ============================================
+// PROJECT CHANGE LOG - Histórico detalhado
+// ============================================
+
+model ProjectChangeLog {
+  id              String   @id @default(cuid())
+  
+  projectId       String
+  projectName     String
+  
+  // O que mudou
+  fieldChanged    String   // 'status', 'progresso', 'responsavel', etc
+  oldValue        String?
+  newValue        String?
+  
+  // Contexto
+  changedBy       String
+  changedByName   String
+  changedByRole   String
+  
+  // Razão (opcional)
+  reason          String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  @@index([projectId])
+  @@index([fieldChanged])
+  @@index([createdAt])
+  
+  @@map("project_change_logs")
+}
+
+// ============================================
+// ADDVALU MEMORY - Memória persistente da IA
+// ============================================
+
+model AddvaluMemory {
+  id              String   @id @default(cuid())
+  
+  // Chave de contexto
+  userId          String?  // null = memória global
+  sessionId       String?
+  
+  // Tipo de memória
+  memoryType      MemoryType
+  
+  // Dados
+  key             String   // Chave identificadora
+  value           Json     // Valor armazenado
+  
+  // Contexto temporal
+  validFrom       DateTime @default(now())
+  validUntil      DateTime? // null = permanente
+  
+  // Metadados
+  accessCount     Int      @default(0)
+  lastAccessedAt  DateTime?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([memoryType])
+  @@index([key])
+  @@index([validUntil])
+  
+  @@map("addvalu_memories")
+}
+
+// ============================================
+// PROACTIVE ALERTS - Alertas gerados pela IA
+// ============================================
+
+model ProactiveAlert {
+  id              String   @id @default(cuid())
+  alertId         String   @unique
+  
+  // Tipo e severidade
+  alertType       AlertType
+  severity        Severity
+  
+  // Conteúdo
+  title           String
+  description     String
+  
+  // Entidade relacionada
+  entityType      EntityType
+  entityId        String?
+  entityName      String?
+  
+  // Recomendação
+  recommendation  String?
+  
+  // Para quem
+  targetUsers     String[] // IDs dos usuários que devem ver
+  targetRoles     String[] // Roles que devem ver
+  
+  // Estado
+  status          AlertStatus @default(active)
+  
+  // Acknowledgment
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  
+  // Expiração
+  expiresAt       DateTime?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([entityType, entityId])
+  @@index([alertType])
+  @@index([severity])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+  
+  @@map("proactive_alerts")
+}
+
+// ============================================
+// CONVERSATION SESSIONS - Histórico de chats
+// ============================================
+
+model ConversationSession {
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  
+  userId          String
+  userName        String
+  userRole        String
+  
+  // Contexto inicial
+  initialContext  Json?
+  
+  // Status
+  status          SessionStatus @default(active)
+  
+  // Metadados
+  messageCount    Int      @default(0)
+  lastMessageAt   DateTime?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  messages        ConversationMessage[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  
+  @@map("conversation_sessions")
+}
+
+model ConversationMessage {
+  id              String   @id @default(cuid())
+  
+  sessionId       String
+  session         ConversationSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  
+  // Conteúdo
+  role            MessageRole
+  content         String   @db.Text
+  
+  // Metadados da IA
+  intent          String?
+  responseMode    String?  // 'executive' | 'operational'
+  contextUsed     Json?    // Contexto que foi usado
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  @@index([sessionId])
+  @@index([createdAt])
+  
+  @@map("conversation_messages")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum EventType {
+  PROJECT_CREATED
+  PROJECT_IMPORTED
+  PROJECT_UPDATED
+  PROJECT_COMPLETED
+  PROJECT_REMOVED
+  
+  STATUS_CHANGED
+  PROGRESS_CHANGED
+  RESPONSIBLE_CHANGED
+  DIRECTORATE_CHANGED
+  COORDINATION_CHANGED
+  DEADLINE_CHANGED
+  LINK_CHANGED
+  
+  USER_CREATED
+  USER_UPDATED
+  USER_DEACTIVATED
+  PERMISSION_CHANGED
+  
+  PANEL_CREATED
+  PANEL_UPDATED
+  PANEL_REMOVED
+  
+  SYSTEM_IMPORT
+  SYSTEM_SYNC
+}
+
+enum EntityType {
+  PROJECT
+  USER
+  PANEL
+  SYSTEM
+  DIRECTORATE
+  COORDINATION
+}
+
+enum Severity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum MemoryType {
+  context    // Contexto de conversa
+  fact       // Fato aprendido
+  preference // Preferência do usuário
+  insight    // Insight operacional
+  alert_ack  // Alerta reconhecido
+}
+
+enum AlertType {
+  DELAY_RISK
+  STALE_PROJECT
+  WORKLOAD_CONCENTRATION
+  NEW_PROJECT
+  STATUS_CRITICAL
+  PERMISSION_CHANGE
+  SYSTEM_CHANGE
+  CUSTOM
+}
+
+enum AlertStatus {
+  active
+  acknowledged
+  resolved
+  expired
+}
+
+enum SessionStatus {
+  active
+  paused
+  ended
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}

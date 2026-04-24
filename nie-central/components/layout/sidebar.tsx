@@ -19,6 +19,7 @@ import {
   ChevronRight,
   BarChart3,
   Shield,
+  ShieldCheck,
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,12 +28,14 @@ import { Avatar } from '@/components/ui';
 
 import { UserProfile } from '@/types';
 import { PROFILE_LABELS } from '@/lib/mock-data';
+import { canAccessManagePanel } from '@/lib/permissions';
 
-const navItems: { id: string; label: string; href: string; icon: React.ElementType; requiredProfile?: UserProfile[] }[] = [
+const navItems: { id: string; label: string; href: string; icon: React.ElementType; requiredProfile?: UserProfile[]; hideForUser?: boolean }[] = [
   { id: 'dashboard', label: 'Painel', href: '/dashboard', icon: LayoutDashboard },
   { id: 'projetos', label: 'Projetos', href: '/dashboard/projetos', icon: FolderKanban },
   { id: 'equipe', label: 'Equipe', href: '/dashboard/equipe', icon: Users },
   { id: 'relatorios', label: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
+  { id: 'gerenciar', label: 'Gerenciar', href: '/dashboard/gerenciar', icon: ShieldCheck },
   { id: 'admin', label: 'Administração', href: '/dashboard/admin', icon: Shield, requiredProfile: ['master_admin', 'admin'] },
   { id: 'configuracoes', label: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ];
@@ -50,6 +53,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const filteredNavItems = navItems.filter((item) => {
     // Automação: Bloqueio automático de Relatórios para quem não tem acesso
     if (item.id === 'relatorios' && !canAccessReports()) return false;
+    
+    // Automação: Bloqueio do painel de gerenciamento
+    if (item.id === 'gerenciar' && !canAccessManagePanel(user)) return false;
     
     if (!item.requiredProfile) return true;
     return checkPermission(item.requiredProfile);
