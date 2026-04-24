@@ -548,7 +548,7 @@ export function UserManagementPanel() {
                         <div key={log.id} className="p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-900/20 space-y-2">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[10px] uppercase font-bold">
+                              <Badge variant="default" className="text-[10px] uppercase font-bold">
                                 {log.action}
                               </Badge>
                               <span className="text-xs text-gray-400">
