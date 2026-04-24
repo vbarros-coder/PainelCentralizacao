@@ -57,21 +57,37 @@ export interface UserPresence {
   lastActive: number; // timestamp
 }
 
+// Tipos de cargo hierárquicos
+export type UserRole = 
+  | 'adm-nie'
+  | 'executivo-luciana' 
+  | 'executivo-william'
+  | 'diretor'
+  | 'coordenacao'
+  | 'operacional'
+  | 'visualizador';
+
 export interface User {
   id: string;
   email: string;
   name: string;
   profile: UserProfile;
-  diretoria?: string; 
-  cargo?: string;
+  role: UserRole;
+  diretoria?: string; // Diretoria principal do usuário
+  coordenacao?: string; // Coordenação/equipe específica
+  cargo?: string; // Cargo descritivo (ex: "Diretor Garantia", "Coordenação Garantia 1")
   status: UserStatus;
-  isNew?: boolean; // Para destaque administrativo
+  isNew?: boolean;
   avatar?: string;
   createdAt: string;
   lastLogin?: string;
   deactivatedAt?: string;
   deactivatedBy?: string;
   presence?: UserPresence;
+  // Permissões explícitas
+  allowedDirectorates?: string[]; // Diretorias adicionais permitidas
+  allowedCoordinations?: string[]; // Coordenações adicionais permitidas
+  allowedProjects?: string[]; // Projetos específicos permitidos
 }
 
 export interface AuthSession {
@@ -123,16 +139,19 @@ export interface Project {
   status: ProjectStatus;
   tipo: ProjectType;
   diretoria: string;
+  coordenacao?: string; // Coordenação responsável
   responsavel: string;
+  responsibleUserId?: string; // ID do usuário responsável
   link: string;
   destaque: boolean;
   favorito: boolean;
   createdAt: string;
   updatedAt: string;
-  progresso?: number; // 0-100
+  progresso?: number;
   dataInicio?: string;
   dataFim?: string;
   equipe?: string[];
+  allowedUsers?: string[]; // Usuários específicos com acesso
 }
 
 export interface ProjectFilters {

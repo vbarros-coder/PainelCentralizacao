@@ -14,7 +14,7 @@ import { MOCK_PROJECTS } from '@/lib/mock-data';
 import { useState, useMemo } from 'react';
 
 function RelatoriosContent() {
-  const { user, isSuperAdmin, logAction } = useAuth();
+  const { user, isGlobalAdmin, logAction } = useAuth();
   const [downloading, setDownloading] = useState<string | null>(null);
 
   // Lógica para obter o mês e ano atual dinamicamente
@@ -22,10 +22,10 @@ function RelatoriosContent() {
   const currentMonthYear = currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
   const formattedMonthYear = currentMonthYear.charAt(0).toUpperCase() + currentMonthYear.slice(1);
 
-  // Automação: Filtrar estatísticas por diretoria (se não for super admin)
+  // Automação: Filtrar estatísticas por diretoria (se não for ADM NIE)
   const stats = useMemo(() => {
     const projects = MOCK_PROJECTS.filter(p => 
-      isSuperAdmin() || user?.profile === 'executivo' || p.diretoria === user?.diretoria
+      isGlobalAdmin() || user?.profile === 'executivo' || p.diretoria === user?.diretoria
     );
 
     return {
@@ -35,7 +35,7 @@ function RelatoriosContent() {
       tecnologia: projects.filter(p => p.categoria === 'tecnologia').length,
       diretoria: user?.diretoria || 'Geral'
     };
-  }, [user, isSuperAdmin]);
+  }, [user, isGlobalAdmin]);
 
   const handleDownload = (name: string) => {
     if (typeof window === 'undefined') return;

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
@@ -43,8 +43,13 @@ interface Message {
 }
 
 export function AddvaluChat() {
-  const { user } = useAuth();
-  const { projects } = useProjects();
+  const { user, filterProjectsByAccess } = useAuth();
+  const { projects: allProjects } = useProjects();
+  
+  // Filtrar projetos por permissão do usuário
+  const projects = useMemo(() => {
+    return filterProjectsByAccess(allProjects);
+  }, [allProjects, filterProjectsByAccess]);
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');

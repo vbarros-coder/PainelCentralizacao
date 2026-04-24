@@ -19,7 +19,7 @@ import { AnimatePresence } from 'framer-motion';
 
 function AdminContent() {
   const router = useRouter();
-  const { getAllUsers, isSuperAdmin, getLogs, performBackup, updateUserAdmin, logAction } = useAuth();
+  const { getAllUsers, isGlobalAdmin, getLogs, performBackup, updateUserAdmin, logAction } = useAuth();
   const { showToast } = useToast();
   const [executing, setExecuting] = useState<string | null>(null);
   
@@ -31,7 +31,7 @@ function AdminContent() {
   // Data
   const allUsers = getAllUsers();
   const logs = getLogs();
-  const superAdmin = isSuperAdmin();
+  const globalAdmin = isGlobalAdmin();
 
   const handleAction = async (item: any) => {
     if (item.title === 'Usuários') {
@@ -44,7 +44,7 @@ function AdminContent() {
       return;
     }
 
-    if (!superAdmin && ['Permissões', 'Logs', 'Backup'].includes(item.title)) {
+    if (!globalAdmin && ['Permissões', 'Logs', 'Backup'].includes(item.title)) {
       showToast('Acesso negado. Apenas administradores autorizados.', 'error');
       return;
     }
@@ -107,8 +107,8 @@ function AdminContent() {
     ];
 
     // Se não for super admin, remove os itens restritos
-    return items.filter(item => !item.restricted || superAdmin);
-  }, [allUsers, superAdmin, logs]);
+    return items.filter(item => !item.restricted || globalAdmin);
+  }, [allUsers, globalAdmin, logs]);
 
   // Modal Components
   const Modal = ({ title, isOpen, onClose, children, icon: Icon, color }: any) => (
@@ -169,7 +169,7 @@ function AdminContent() {
                 Administração
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Gerenciamento do sistema {superAdmin && <span className="text-[#0055A4] font-semibold">• Acesso Master</span>}
+                Gerenciamento do sistema {globalAdmin && <span className="text-[#0055A4] font-semibold">• Acesso Master</span>}
               </p>
             </div>
           </div>
@@ -384,10 +384,10 @@ function AdminContent() {
 }
 
 export default function AdminPage() {
-  const { isSuperAdmin, checkPermission } = useAuth();
+  const { isGlobalAdmin, checkPermission } = useAuth();
   
-  // Automação: Bloqueio automático para quem não é Super Admin ou Admin nominal
-  const hasAccess = isSuperAdmin() || checkPermission(['admin']);
+  // Automação: Bloqueio automático para quem não é ADM NIE ou Admin nominal
+  const hasAccess = isGlobalAdmin() || checkPermission(['admin']);
 
   return (
     <ProtectedRoute requiredProfiles={['master_admin', 'admin']}>

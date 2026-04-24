@@ -10,9 +10,20 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, AuthSession, LoginCredentials, AuthState, UserProfile, UserStatus, UserPresenceStatus } from '@/types';
+import { User, AuthSession, LoginCredentials, AuthState, UserProfile, UserStatus, UserPresenceStatus, UserRole, Project } from '@/types';
 import { MOCK_USERS, MOCK_PASSWORDS } from '@/lib/mock-data';
 import { generateId, isClient } from '@/lib/utils';
+import { 
+  isGlobalAdmin, 
+  canManageUsers, 
+  canAccessDirectorate, 
+  canAccessCoordination,
+  canViewProject,
+  filterProjectsByUserAccess,
+  getUserPermissionScope,
+  getRoleLabel,
+  PermissionScope
+} from '@/lib/permissions';
 
 // ============================================
 // CONSTANTS
@@ -36,6 +47,7 @@ interface RegisterData {
   diretoria?: string;
   cargo?: string;
   profile?: UserProfile;
+  role?: UserRole;
 }
 
 interface AuthContextType extends AuthState {
@@ -43,7 +55,17 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   checkPermission: (requiredProfiles: UserProfile[]) => boolean;
-  isSuperAdmin: () => boolean;
+  // Permissões hierárquicas (novo sistema)
+  isGlobalAdmin: () => boolean;
+  canManageUsers: () => boolean;
+  canAccessAdminPanel: () => boolean;
+  canAccessDirectorate: (directorate: string) => boolean;
+  canAccessCoordination: (coordination: string) => boolean;
+  canViewProject: (project: Project) => boolean;
+  filterProjectsByAccess: (projects: Project[]) => Project[];
+  getPermissionScope: () => PermissionScope;
+  getRoleLabel: () => string;
+  // Funções legadas (manter compatibilidade)
   canAccessProject: (projectDiretoria: string) => boolean;
   canAccessReports: () => boolean;
   updateUser: (updates: Partial<User>) => void;
@@ -329,6 +351,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: data.name,
       email: email,
       profile: data.profile || 'usuario',
+      role: data.role || 'visualizador',
       diretoria: data.diretoria,
       cargo: data.cargo,
       status: 'pendente', // Novos usuários começam como pendentes
@@ -398,17 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.user]);
 
   const canAccessProject = useCallback((projectDiretoria: string): boolean => {
-    if (!state.user) return false;
-    
-    // Automação: Acesso Total
-    if (isSuperAdmin() || state.user.profile === 'executivo') return true;
-    
-    // Diretor e Coordenador acesso à sua diretoria automática
-    if (state.user.profile === 'diretoria' || state.user.profile === 'coordenacao') {
-      return state.user.diretoria === projectDiretoria;
-    }
-    
-    return true; // Usuário comum vê todos os projetos (visualização apenas)
+    return canAccessDirectorate(state.user, projectDiretoria);
   }, [state.user]);
 
   // ============================================
@@ -646,18 +659,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.isAuthenticated, state.user, updateUser]);
 
   // ============================================
-  // SUPER ADMIN HELPER
+  // PERMISSÕES HIERÁRQUICAS (NOVO SISTEMA)
+  // ============================================
+
+  const isGlobalAdminFn = useCallback((): boolean => {
+    return isGlobalAdmin(state.user);
+  }, [state.user]);
+
+  const canManageUsersFn = useCallback((): boolean => {
+    return canManageUsers(state.user);
+  }, [state.user]);
+
+  const canAccessAdminPanelFn = useCallback((): boolean => {
+    return canManageUsers(state.user);
+  }, [state.user]);
+
+  const canAccessDirectorateFn = useCallback((directorate: string): boolean => {
+    return canAccessDirectorate(state.user, directorate);
+  }, [state.user]);
+
+  const canAccessCoordinationFn = useCallback((coordination: string): boolean => {
+    return canAccessCoordination(state.user, coordination);
+  }, [state.user]);
+
+  const canViewProjectFn = useCallback((project: Project): boolean => {
+    return canViewProject(state.user, project);
+  }, [state.user]);
+
+  const filterProjectsByAccessFn = useCallback((projects: Project[]): Project[] => {
+    return filterProjectsByUserAccess(state.user, projects);
+  }, [state.user]);
+
+  const getPermissionScopeFn = useCallback((): PermissionScope => {
+    return getUserPermissionScope(state.user);
+  }, [state.user]);
+
+  const getRoleLabelFn = useCallback((): string => {
+    if (!state.user) return '';
+    return getRoleLabel(state.user);
+  }, [state.user]);
+
+  // ============================================
+  // FUNÇÕES LEGADAS (MANTER COMPATIBILIDADE)
   // ============================================
 
   const isSuperAdmin = useCallback((): boolean => {
-    if (!state.user) return false;
-
-    const emailMatch = AUTHORIZED_USERS.includes(state.user.email.toLowerCase());
-    const nameMatch = AUTHORIZED_NAMES.some(name => 
-      state.user?.name.toLowerCase().includes(name.toLowerCase())
-    );
-
-    return emailMatch || nameMatch;
+    return isGlobalAdmin(state.user);
   }, [state.user]);
 
   // ============================================
@@ -696,12 +743,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     register,
     checkPermission,
+    // Novas permissões hierárquicas
+    isGlobalAdmin: isGlobalAdminFn,
+    canManageUsers: canManageUsersFn,
+    canAccessAdminPanel: canAccessAdminPanelFn,
+    canAccessDirectorate: canAccessDirectorateFn,
+    canAccessCoordination: canAccessCoordinationFn,
+    canViewProject: canViewProjectFn,
+    filterProjectsByAccess: filterProjectsByAccessFn,
+    getPermissionScope: getPermissionScopeFn,
+    getRoleLabel: getRoleLabelFn,
+    // Funções legadas
     canAccessProject,
     canAccessReports,
     updateUser,
     getAllUsers,
     updateUserAdmin,
-    isSuperAdmin,
     logAction,
     getLogs,
     performBackup,

@@ -112,7 +112,7 @@ function StatCard({ title, value, icon: Icon, color }: { title: string; value: n
 }
 
 function UserManagementContent() {
-  const { getAllUsers, updateUserAdmin, user: currentUser, isSuperAdmin } = useAuth();
+  const { getAllUsers, updateUserAdmin, user: currentUser, isGlobalAdmin } = useAuth();
   const { showToast } = useToast();
   const allUsers = getAllUsers();
   
@@ -155,7 +155,7 @@ function UserManagementContent() {
     pendentes: allUsers.filter(u => u.status === 'pendente').length,
   }), [allUsers]);
 
-  const canEdit = isSuperAdmin();
+  const canEdit = isGlobalAdmin();
 
   const handleConfirmAction = () => {
     if (!confirmModal.user || !confirmModal.action) return;
