@@ -12,10 +12,12 @@ import { ProtectedRoute } from '@/features/auth/protected-route';
 import { HeroSection } from '@/features/projects/hero-section';
 import { ProjectCard } from '@/features/projects/project-card';
 import { ProjectFiltersComponent } from '@/features/projects/project-filters';
+import { ComingSoonModal } from '@/features/projects/coming-soon-modal';
 import { useProjects } from '@/features/projects/use-projects';
 import { Skeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/auth-context';
+import { Project } from '@/types';
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -34,6 +36,19 @@ function DashboardContent() {
   } = useProjects();
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+
+  const handleAccess = (project: Project) => {
+    if (project.link === '#') {
+      setSelectedProject(project);
+      setIsComingSoonOpen(true);
+    }
+  };
+
+  // Separar Painéis (com link) de Projetos (sem link)
+  const painelProjects = filteredProjects.filter(p => p.link !== '#');
+  const projetoProjects = filteredProjects.filter(p => p.link === '#');
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -87,6 +102,7 @@ function DashboardContent() {
                       project={project}
                       onToggleFavorite={toggleFavorite}
                       onToggleDestaque={toggleUserDestaque}
+                      onAccess={handleAccess}
                       isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
@@ -96,51 +112,18 @@ function DashboardContent() {
             </section>
           )}
 
-          {/* All Projects Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {filters.apenasFavoritos
-                  ? 'Meus Favoritos'
-                  : filters.search
-                  ? 'Resultados da Busca'
-                  : 'Todos os Projetos'}
-              </h2>
-              <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
-                {filteredProjects.length}
-              </span>
-            </div>
-
-            {/* Loading State */}
-            {isLoading && (
-              <div className={cn(
-                'grid gap-6',
-                viewMode === 'grid'
-                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                  : 'grid-cols-1'
-              )}>
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 space-y-4"
-                  >
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-20 rounded-full" />
-                      <Skeleton className="h-6 w-20 rounded-full" />
-                    </div>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                    <div className="pt-2">
-                      <Skeleton className="h-2 w-full rounded-full" />
-                    </div>
-                  </div>
-                ))}
+          {/* Painéis Section */}
+          {painelProjects.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Painéis
+                </h2>
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/30 text-[#0055A4] dark:text-blue-300 text-xs rounded-full">
+                  {painelProjects.length}
+                </span>
               </div>
-            )}
 
-            {/* Projects Grid */}
-            {!isLoading && filteredProjects.length > 0 && (
               <div className={cn(
                 'grid gap-6',
                 viewMode === 'grid'
@@ -148,22 +131,65 @@ function DashboardContent() {
                   : 'grid-cols-1'
               )}>
                 <AnimatePresence mode="popLayout">
-                  {filteredProjects.map((project, index) => (
+                  {painelProjects.map((project, index) => (
                     <ProjectCard
                       key={project.id}
                       project={project}
                       onToggleFavorite={toggleFavorite}
                       onToggleDestaque={toggleUserDestaque}
+                      onAccess={handleAccess}
                       isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
                   ))}
                 </AnimatePresence>
               </div>
-            )}
+            </section>
+          )}
 
-            {/* Empty State */}
-            {!isLoading && filteredProjects.length === 0 && (
+          {/* Projetos Section */}
+          {projetoProjects.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Projetos
+                </h2>
+                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                  {projetoProjects.length}
+                </span>
+              </div>
+
+              <div className={cn(
+                'grid gap-6',
+                viewMode === 'grid'
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  : 'grid-cols-1'
+              )}>
+                <AnimatePresence mode="popLayout">
+                  {projetoProjects.map((project, index) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      onToggleFavorite={toggleFavorite}
+                      onToggleDestaque={toggleUserDestaque}
+                      onAccess={handleAccess}
+                      isUserDestaque={userDestaques.includes(project.id)}
+                      index={index}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </section>
+          )}
+
+            <ComingSoonModal
+            isOpen={isComingSoonOpen}
+            onClose={() => setIsComingSoonOpen(false)}
+            project={selectedProject}
+          />
+
+          {/* Empty State */}
+          {!isLoading && filteredProjects.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -199,7 +225,6 @@ function DashboardContent() {
                 </button>
               </motion.div>
             )}
-          </section>
         </div>
       </div>
     </div>

@@ -26,6 +26,7 @@ interface ProjectCardProps {
   project: Project;
   onToggleFavorite: (id: string) => void;
   onToggleDestaque?: (id: string) => void;
+  onAccess?: (project: Project) => void;
   isUserDestaque?: boolean;
   index?: number;
 }
@@ -34,6 +35,7 @@ export function ProjectCard({
   project, 
   onToggleFavorite, 
   onToggleDestaque,
+  onAccess,
   isUserDestaque = false,
   index = 0 
 }: ProjectCardProps) {
@@ -59,6 +61,29 @@ export function ProjectCard({
     }
   };
 
+  const handleAccess = (e: React.MouseEvent) => {
+    if (project.link === '#' && onAccess) {
+      e.preventDefault();
+      e.stopPropagation();
+      onAccess(project);
+    }
+  };
+
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (project.link !== '#') {
+      return (
+        <Link href={project.link} target="_blank" rel="noopener noreferrer" className="block h-full">
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <div onClick={handleAccess} className="cursor-pointer h-full">
+        {children}
+      </div>
+    );
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -69,8 +94,9 @@ export function ProjectCard({
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       layout
+      className="h-full"
     >
-      <Link href={project.link} target="_blank" rel="noopener noreferrer">
+      <CardWrapper>
         <Card
           isHoverable
           className={cn(
@@ -118,7 +144,7 @@ export function ProjectCard({
                   )}
                   title={isUserDestaque ? 'Remover dos meus destaques' : 'Adicionar aos meus destaques'}
                 >
-                  <Heart className={cn('w-3.5 h-3.5', isUserDestaque && 'fill-current')} />
+                  <Star className={cn('w-3.5 h-3.5', isUserDestaque && 'fill-current')} />
                 </motion.button>
               )}
             </div>
@@ -134,7 +160,7 @@ export function ProjectCard({
                 className="p-1.5 rounded-full text-gray-400 hover:text-[#F47920] hover:bg-[#F47920]/10 transition-colors"
                 title="Adicionar aos meus destaques"
               >
-                <Heart className="w-3.5 h-3.5" />
+                <Star className="w-3.5 h-3.5" />
               </motion.button>
             </div>
           )}
@@ -273,7 +299,7 @@ export function ProjectCard({
             }}
           />
         </Card>
-      </Link>
+      </CardWrapper>
     </motion.div>
   );
 }
