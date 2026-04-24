@@ -3,7 +3,7 @@ import { Project } from '@/types';
 export function getExecutiveSummary(projects: Project[]) {
   const active = projects.filter(p => p.status === 'ativo');
   const completed = projects.filter(p => p.status === 'concluido');
-  const delayed = projects.filter(p => p.status === 'atrasado');
+  const delayed = projects.filter(p => p.status === 'ativo' && (p.progresso || 0) < 50);
   const planning = projects.filter(p => p.status === 'planejamento');
 
   return {

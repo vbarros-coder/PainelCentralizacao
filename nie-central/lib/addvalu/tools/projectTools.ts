@@ -52,7 +52,8 @@ export function getPlanningProjects(projects: Project[], user: User) {
 
 export function getDelayedProjects(projects: Project[], user: User) {
   const authorized = filterAIContextByUserAccess(projects, user);
-  const items = authorized.filter(p => p.status === 'atrasado');
+  // Consideramos atrasados projetos ativos com progresso abaixo de 50%
+  const items = authorized.filter(p => p.status === 'ativo' && (p.progresso || 0) < 50);
   return {
     tool: 'getDelayedProjects',
     count: items.length,
@@ -69,8 +70,8 @@ export function getDelayedProjects(projects: Project[], user: User) {
 
 export function getCriticalProjects(projects: Project[], user: User) {
   const authorized = filterAIContextByUserAccess(projects, user);
-  // Considerando críticos como atrasados ou com progresso baixo e data próxima (simplificado)
-  const items = authorized.filter(p => p.status === 'atrasado' || (p.status === 'ativo' && (p.progresso || 0) < 30));
+  // Considerando críticos como pausados ou ativos com progresso muito baixo (ex: < 30%)
+  const items = authorized.filter(p => p.status === 'pausado' || (p.status === 'ativo' && (p.progresso || 0) < 30));
   return {
     tool: 'getCriticalProjects',
     count: items.length,
