@@ -24,13 +24,10 @@ function DashboardContent() {
   const {
     filteredProjects,
     featuredProjects,
-    userDestaques,
     filters,
     setFilters,
     sort,
     setSort,
-    toggleFavorite,
-    toggleUserDestaque,
     isLoading,
     stats,
   } = useProjects();
@@ -46,9 +43,9 @@ function DashboardContent() {
     }
   };
 
-  // Separar Painéis (com link) de Projetos (sem link)
-  const painelProjects = filteredProjects.filter(p => p.link !== '#');
-  const projetoProjects = filteredProjects.filter(p => p.link === '#');
+  // Separar Painéis de Projetos usando o campo tipo
+  const painelProjects = filteredProjects.filter(p => p.tipo === 'painel');
+  const projetoProjects = filteredProjects.filter(p => p.tipo === 'projeto');
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -100,10 +97,7 @@ function DashboardContent() {
                     <ProjectCard
                       key={project.id}
                       project={project}
-                      onToggleFavorite={toggleFavorite}
-                      onToggleDestaque={toggleUserDestaque}
                       onAccess={handleAccess}
-                      isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
                   ))}
@@ -135,10 +129,7 @@ function DashboardContent() {
                     <ProjectCard
                       key={project.id}
                       project={project}
-                      onToggleFavorite={toggleFavorite}
-                      onToggleDestaque={toggleUserDestaque}
                       onAccess={handleAccess}
-                      isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
                   ))}
@@ -170,10 +161,7 @@ function DashboardContent() {
                     <ProjectCard
                       key={project.id}
                       project={project}
-                      onToggleFavorite={toggleFavorite}
-                      onToggleDestaque={toggleUserDestaque}
                       onAccess={handleAccess}
-                      isUserDestaque={userDestaques.includes(project.id)}
                       index={index}
                     />
                   ))}

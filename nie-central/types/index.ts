@@ -113,12 +113,15 @@ export type ProjectStatus =
   | 'cancelado' 
   | 'planejamento';
 
+export type ProjectType = 'painel' | 'projeto';
+
 export interface Project {
   id: string;
   nome: string;
   descricao: string;
   categoria: ProjectCategory;
   status: ProjectStatus;
+  tipo: ProjectType;
   diretoria: string;
   responsavel: string;
   link: string;
