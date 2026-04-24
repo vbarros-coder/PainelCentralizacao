@@ -672,13 +672,6 @@ export const DIRETORIAS = [
   'Garantia / Fiança / Riscos',
   'Responsabilidade Civil Geral (RCG)',
   'Responsabilidade Civil Profissional (RCP)',
-  'Núcleo de Inteligência Estratégica',
-  'COO - Addvalora Brasil',
-  'CEO - Addvalora Brasil',
-  'CFO - Addvalora Brasil',
-  'CEO Middle Market',
-  'Addis Latam',
-  'Administrativo - Addvalora Brasil',
 ] as const;
 
 // ============================================
