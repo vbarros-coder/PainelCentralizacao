@@ -120,10 +120,8 @@ export interface OperationalEvent {
 export interface AddvaluContext {
   question: string;
   intent: string;
-  summary: any;
-  projects: Project[];
-  insights: string[];
-  alerts: string[];
+  toolUsed?: string;
+  toolResult?: any;
   memory: ConversationMemory;
   events: OperationalEvent[];
 }

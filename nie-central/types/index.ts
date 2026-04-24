@@ -73,6 +73,7 @@ export interface User {
   name: string;
   profile: UserProfile;
   role: UserRole;
+  requestedRoles?: UserRole[]; // Cargos solicitados pelo usuário
   diretoria?: string; // Diretoria principal do usuário
   coordenacao?: string; // Coordenação/equipe específica
   cargo?: string; // Cargo descritivo (ex: "Diretor Garantia", "Coordenação Garantia 1")

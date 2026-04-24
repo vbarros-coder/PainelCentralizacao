@@ -15,7 +15,8 @@ import {
   Mail,
   Building,
   Briefcase,
-  ArrowLeft
+  ArrowLeft,
+  Check
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,6 +33,26 @@ const DIRETORIAS = [
   'Outros'
 ];
 
+const CARGOS = [
+  'adm-nie',
+  'executivo-luciana',
+  'executivo-william',
+  'diretor',
+  'coordenacao',
+  'operacional',
+  'visualizador'
+];
+
+const CARGO_LABELS: Record<string, string> = {
+  'adm-nie': 'ADM NIE',
+  'executivo-luciana': 'Executivo (Luciana)',
+  'executivo-william': 'Executivo (William)',
+  'diretor': 'Diretor',
+  'coordenacao': 'Coordenação',
+  'operacional': 'Operacional',
+  'visualizador': 'Visualizador'
+};
+
 export default function RegistroPage() {
   const router = useRouter();
   const { register } = useAuth();
@@ -40,11 +61,19 @@ export default function RegistroPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [diretoria, setDiretoria] = useState('');
-  const [cargo, setCargo] = useState('');
+  const [selectedCargos, setSelectedCargos] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const toggleCargo = (cargo: string) => {
+    setSelectedCargos(prev => 
+      prev.includes(cargo) 
+        ? prev.filter(c => c !== cargo) 
+        : [...prev, cargo]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +81,7 @@ export default function RegistroPage() {
 
     const sanitizedEmail = sanitizeInput(email.toLowerCase().trim());
 
-    if (!name || !sanitizedEmail || !password || !diretoria || !cargo) {
+    if (!name || !sanitizedEmail || !password || !diretoria || selectedCargos.length === 0) {
       setError('Por favor, preencha todos os campos.');
       return;
     }
@@ -70,7 +99,7 @@ export default function RegistroPage() {
         email: sanitizedEmail,
         password,
         diretoria,
-        cargo,
+        cargos: selectedCargos,
         profile: 'usuario'
       });
 
@@ -278,28 +307,40 @@ export default function RegistroPage() {
 
             {/* Cargo */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cargo
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cargos Solicitados (Múltipla Escolha)
               </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  value={cargo}
-                  onChange={(e) => setCargo(e.target.value)}
-                  placeholder="Seu cargo"
-                  className={cn(
-                    'w-full pl-10 pr-4 py-2 rounded-lg border bg-white',
-                    'text-gray-900 placeholder:text-gray-400',
-                    'focus:outline-none focus:border-[#F47920]',
-                    'transition-all duration-200',
-                    error ? 'border-red-300' : 'border-gray-300'
-                  )}
-                  disabled={isLoading}
-                />
+              <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                {CARGOS.map((c) => (
+                  <label 
+                    key={c} 
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                      selectedCargos.includes(c) 
+                        ? "bg-[#F47920]/10 border border-[#F47920]/20 text-[#F47920]" 
+                        : "hover:bg-gray-100 text-gray-600 border border-transparent"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={selectedCargos.includes(c)}
+                      onChange={() => toggleCargo(c)}
+                      disabled={isLoading}
+                    />
+                    <div className={cn(
+                      "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                      selectedCargos.includes(c) ? "bg-[#F47920] border-[#F47920]" : "bg-white border-gray-300"
+                    )}>
+                      {selectedCargos.includes(c) && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <span className="text-xs font-medium">{CARGO_LABELS[c]}</span>
+                  </label>
+                ))}
               </div>
+              {selectedCargos.length === 0 && (
+                <p className="text-[10px] text-gray-400 mt-1 ml-1">Selecione pelo menos um cargo</p>
+              )}
             </div>
 
             {/* Submit Button */}

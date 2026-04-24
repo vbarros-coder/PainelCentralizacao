@@ -222,10 +222,10 @@ export function AddvaluChat() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSend(undefined, 'Quais os atrasos?')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-[10px] font-bold hover:bg-red-100 transition-colors whitespace-nowrap border border-red-100 dark:border-red-800"
+                  onClick={() => handleSend(undefined, 'Quais projetos concluídos?')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-bold hover:bg-green-100 transition-colors whitespace-nowrap border border-green-100 dark:border-green-800"
                 >
-                  <Sparkles className="w-3 h-3" /> ATRASOS
+                  <CheckCircle className="w-3 h-3" /> CONCLUÍDOS
                 </button>
               </div>
 

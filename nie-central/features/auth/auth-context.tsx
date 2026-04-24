@@ -48,6 +48,7 @@ interface RegisterData {
   password: string;
   diretoria?: string;
   cargo?: string;
+  cargos?: string[]; // Múltiplos cargos solicitados
   profile?: UserProfile;
   role?: UserRole;
 }
@@ -355,7 +356,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: data.name,
       email: email,
       profile: data.profile || 'usuario',
-      role: data.role || 'visualizador',
+      role: (data.role || (data.cargos && data.cargos[0]) || data.cargo || 'visualizador') as UserRole,
+      requestedRoles: data.cargos as UserRole[],
       diretoria: data.diretoria,
       cargo: data.cargo,
       status: 'pendente', // Novos usuários começam como pendentes
@@ -376,6 +378,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     logAction('Novo cadastro realizado', 'AUTH', `Usuário: ${newUser.name} (${newUser.email})`, newUser);
+
+    // Notificação para Luciana e NIE (Simulado)
+    logAction(
+      'NOTIFICAÇÃO: Nova solicitação de acesso', 
+      'SISTEMA', 
+      `Destinatários: Luciana, NIE | Usuário: ${newUser.name} (${newUser.email}) | Cargos: ${newUser.requestedRoles?.join(', ') || 'Nenhum'}`,
+      newUser
+    );
 
     return { success: true };
   }, [usersDb, passwordsDb]);

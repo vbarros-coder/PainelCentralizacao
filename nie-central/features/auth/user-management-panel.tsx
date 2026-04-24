@@ -77,11 +77,13 @@ export function UserManagementPanel() {
   const { user: currentUser, getAllUsers, updateUserAdmin, logAction, getLogs } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [directorateFilter, setDirectorateFilter] = useState<string | 'all'>('all');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const users = getAllUsers();
+  const pendingUsersCount = useMemo(() => users.filter(u => u.status === 'pendente').length, [users]);
   const projects = MOCK_PROJECTS.filter(p => p.tipo === 'projeto');
   const panels = MOCK_PROJECTS.filter(p => p.tipo === 'painel');
 
@@ -91,15 +93,16 @@ export function UserManagementPanel() {
       const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) || 
                            u.email.toLowerCase().includes(search.toLowerCase());
       const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+      const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
       const matchesDirectorate = directorateFilter === 'all' || u.diretoria === directorateFilter;
       
       // Filtro de visibilidade: Diretores só veem usuários da sua diretoria
       const canSeeUser = isGlobalAdmin(currentUser) || 
                         (currentUser?.role === 'diretor' && currentUser.diretoria === u.diretoria);
 
-      return matchesSearch && matchesRole && matchesDirectorate && canSeeUser;
+      return matchesSearch && matchesRole && matchesStatus && matchesDirectorate && canSeeUser;
     });
-  }, [users, search, roleFilter, directorateFilter, currentUser]);
+  }, [users, search, roleFilter, statusFilter, directorateFilter, currentUser]);
 
   const handleEditUser = (user: User) => {
     if (canManageUser(currentUser, user)) {
@@ -196,9 +199,22 @@ export function UserManagementPanel() {
             <History className="w-4 h-4" />
             Auditoria
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#0055A4] text-white rounded-xl text-sm font-medium hover:bg-[#004488] transition-colors shadow-sm">
+          <button 
+            onClick={() => setStatusFilter('pendente')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm relative",
+              statusFilter === 'pendente' 
+                ? "bg-orange-500 text-white hover:bg-orange-600" 
+                : "bg-[#0055A4] text-white hover:bg-[#004488]"
+            )}
+          >
             <UserPlus className="w-4 h-4" />
             Novo Usuário
+            {pendingUsersCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800 animate-pulse">
+                {pendingUsersCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -225,6 +241,18 @@ export function UserManagementPanel() {
           {ROLES.map(role => (
             <option key={role} value={role}>{ROLE_LABELS[role]}</option>
           ))}
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className="px-4 py-2 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#0055A4] transition-all min-w-[160px]"
+        >
+          <option value="all">Todos os Status</option>
+          <option value="ativo">Ativo</option>
+          <option value="pendente">Pendente</option>
+          <option value="inativo">Inativo</option>
+          <option value="bloqueado">Bloqueado</option>
         </select>
 
         {isGlobalAdmin(currentUser) && (
@@ -276,6 +304,15 @@ export function UserManagementPanel() {
                       <span className="text-sm text-gray-700 dark:text-gray-300">
                         {getRoleLabel(u)}
                       </span>
+                      {u.status === 'pendente' && u.requestedRoles && u.requestedRoles.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {u.requestedRoles.map(role => (
+                            <span key={role} className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full border border-orange-200">
+                              {ROLE_LABELS[role] || role}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
