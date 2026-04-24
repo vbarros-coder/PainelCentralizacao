@@ -44,9 +44,8 @@ class AddvaluService {
       timestamp: Date.now(),
       data: {
         intent: context.intent,
-        summary: context.summary,
-        alerts: context.alerts,
-        insights: context.insights
+        toolUsed: context.toolUsed,
+        toolResult: context.toolResult
       }
     };
 
@@ -63,50 +62,33 @@ class AddvaluService {
   private async simulateAIReasoning(context: AddvaluContext): Promise<string> {
     await new Promise(resolve => setTimeout(resolve, 1200));
 
-    const { intent, summary, insights, alerts, projects } = context;
+    const { intent, toolResult } = context;
 
-    // Lógica de Geração de Resposta Baseada em Intenção
-    if (intent === 'executive_summary') {
+    // Lógica de Geração de Resposta Baseada no ToolResult
+    if (intent === 'getExecutiveSummary' && toolResult) {
+      const { active, avgProgress, delayed } = toolResult;
       return `### Panorama Executivo NIE
-Temos atualmente **${summary.active} projetos ativos** com um progresso médio de **${summary.avgProgress}%**. 
+Temos atualmente **${active} projetos ativos** com um progresso médio de **${avgProgress}%**. 
 
-**Riscos Identificados:**
-${alerts.length > 0 ? alerts.map(a => `- ⚠️ ${a}`).join('\n') : '- ✅ Nenhuma criticidade imediata detectada.'}
-
-**Insights Operacionais:**
-${insights.map(i => `- ${i}`).join('\n')}
-
-**Recomendação:** Focar na aceleração dos ${summary.delayed} projetos com progresso abaixo da média para garantir as entregas do trimestre.`;
+**Recomendação:** Focar na aceleração dos ${delayed} projetos com progresso abaixo da média para garantir as entregas do trimestre.`;
     }
 
-    if (intent === 'risk_analysis') {
+    if (intent === 'summarizeRisks' && toolResult) {
+      const criticalCount = Array.isArray(toolResult) ? toolResult.length : 0;
       return `### Análise de Riscos e Atrasos
-Identifiquei **${summary.delayed} pontos de atenção** que requerem ação imediata.
-
-**Projetos Críticos:**
-${projects.filter(p => (p.progresso || 0) < 30).slice(0, 3).map(p => `- **${p.nome}**: ${p.progresso}% (Diretoria: ${p.diretoria})`).join('\n')}
-
-**Impacto Operacional:**
-${insights[0] || 'A carga de trabalho está distribuída, mas o baixo progresso em projetos chave pode impactar o SLA global.'}
+Identifiquei **${criticalCount} pontos de atenção** que requerem ação imediata.
 
 Deseja que eu detalhe o plano de mitigação para algum desses projetos?`;
     }
 
-    if (intent === 'group_by_directorate') {
+    if (intent === 'getProjectsByDirectorate' && toolResult) {
       return `### Distribuição por Diretoria
 Aqui está o detalhamento solicitado:
 
-${Object.entries(context.summary.byDirectorate || {}).map(([dir, count]) => `- **${dir}**: ${count} projetos`).join('\n') || '- Dados de agrupamento em processamento.'}
-
-Notei que a diretoria **Property** concentra o maior volume de projetos ativos no momento.`;
+${Object.entries(toolResult || {}).map(([dir, projs]: [string, any]) => `- **${dir}**: ${projs.length} projetos`).join('\n') || '- Dados de agrupamento em processamento.'}`;
     }
 
-    // Resposta Padrão (Agente Proativo)
-    return `Atualmente gerencio **${summary.total} itens** no seu escopo de acesso. 
-    
-${alerts[0] ? `**Alerta Prioritário:** ${alerts[0]}` : 'Tudo operando dentro da normalidade.'}
-
-O que você gostaria de analisar especificamente? Posso detalhar riscos, agrupar por diretoria ou fornecer um resumo executivo.`;
+    return `Recebi sua solicitação sobre "${context.question}". Como sou uma IA formatadora, analisei os dados e estou à disposição para detalhar qualquer ponto específico dos projetos sob sua responsabilidade.`;
   }
 
   public getHistory() { return this.history; }
