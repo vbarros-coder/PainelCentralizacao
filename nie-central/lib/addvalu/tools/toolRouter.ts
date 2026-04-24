@@ -58,7 +58,7 @@ export function routeQuestionToTool(question: string, memory: ConversationMemory
   if (msg.includes('por responsável') || msg.includes('por dono')) return 'getProjectsByOwner';
 
   // Painéis
-  if (msg.includes('painel') || msg.includes('painéis') || msg.includes('dashboards')) {
+  if (msg.includes('painel') || msg.includes('painéis') || msg.includes('dashboards') || msg.includes('pronto')) {
     return 'getPanels';
   }
 

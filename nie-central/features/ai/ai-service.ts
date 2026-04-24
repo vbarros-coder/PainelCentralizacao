@@ -27,15 +27,49 @@ class AddvaluService {
   }
 
   /**
-   * Processa a mensagem do usuário usando o novo Orquestrador e Inteligência
+   * Processa a mensagem do usuário usando o Orquestrador e Inteligência
    */
   public async getResponse(prompt: string, user: User): Promise<ChatMessage> {
+    const startTime = Date.now();
+    
     // 1. Obter Contexto Estruturado (Data + Permission + Intelligence + Memory)
     const context = await orchestrator.buildContext(prompt, user);
 
-    // 2. Chamar "Modelo" (Simulado com Raciocínio Baseado em Contexto)
-    // Em produção, aqui enviamos o ADDVALU_SYSTEM_PROMPT + context para GPT-4/Gemini
-    const responseText = await this.simulateAIReasoning(context);
+    // 2. Gerar Resposta via Inteligência (Novo Fluxo: Intent -> Tool -> Data -> Formatter)
+    let responseText = await orchestrator.generateResponse(context, user);
+
+    // 3. Response Guard - Bloquear frases banidas
+    const BANNED_PHRASES = [
+      "Recebi sua solicitação",
+      "Como sou uma IA formatadora",
+      "estou à disposição",
+      "sob sua responsabilidade",
+      "posso detalhar",
+      "Entendi o que você precisa"
+    ];
+
+    const containsBanned = BANNED_PHRASES.some(phrase => 
+      responseText.toLowerCase().includes(phrase.toLowerCase())
+    );
+
+    if (containsBanned) {
+      console.warn(`[RESPONSE GUARD] Frase banida detectada. Rerodando fluxo...`);
+      // Reroda com fallback simples se falhar novamente
+      responseText = "Não localizei essa referência nos projetos ou painéis disponíveis. Pode me dizer se você quer consultar um projeto, painel ou análise?";
+    }
+
+    // 4. Implementar Log de Debug
+    console.log(`
+[ADDVALU DEBUG LOG]
+message: "${prompt}"
+detectedIntent: ${context.intent}
+matchedEntity: ${context.toolResult?.id || context.toolResult?.nome || 'none'}
+selectedTool: ${context.toolUsed}
+fallbackUsed: ${context.intent === 'general_query' || context.intent === 'unknown'}
+dataCount: ${Array.isArray(context.toolResult) ? context.toolResult.length : (context.toolResult ? 1 : 0)}
+responseSource: ${context.toolUsed !== 'general_query' ? 'tool_result' : 'fallback'}
+processingTime: ${Date.now() - startTime}ms
+    `.trim());
 
     const assistantMessage: ChatMessage = {
       id: generateId(),
@@ -53,42 +87,6 @@ class AddvaluService {
     this.history.push(assistantMessage);
 
     return assistantMessage;
-  }
-
-  /**
-   * Simula o raciocínio da IA baseado no contexto estruturado
-   * Implementa as regras do System Prompt: Direto, Sem "Entendi", Focado em Riscos
-   */
-  private async simulateAIReasoning(context: AddvaluContext): Promise<string> {
-    await new Promise(resolve => setTimeout(resolve, 1200));
-
-    const { intent, toolResult } = context;
-
-    // Lógica de Geração de Resposta Baseada no ToolResult
-    if (intent === 'getExecutiveSummary' && toolResult) {
-      const { active } = toolResult;
-      return `### Panorama Executivo NIE
-Temos atualmente **${active} projetos ativos** na plataforma. 
-
-**Recomendação:** Acompanhar o status dos projetos ativos para garantir o cumprimento dos cronogramas estabelecidos.`;
-    }
-
-    if (intent === 'summarizeRisks' && toolResult) {
-      const criticalCount = Array.isArray(toolResult) ? toolResult.length : 0;
-      return `### Análise de Riscos e Atrasos
-Identifiquei **${criticalCount} pontos de atenção** que requerem ação imediata.
-
-Deseja que eu detalhe o plano de mitigação para algum desses projetos?`;
-    }
-
-    if (intent === 'getProjectsByDirectorate' && toolResult) {
-      return `### Distribuição por Diretoria
-Aqui está o detalhamento solicitado:
-
-${Object.entries(toolResult || {}).map(([dir, projs]: [string, any]) => `- **${dir}**: ${projs.length} projetos`).join('\n') || '- Dados de agrupamento em processamento.'}`;
-    }
-
-    return `Recebi sua solicitação sobre "${context.question}". Como sou uma IA formatadora, analisei os dados e estou à disposição para detalhar qualquer ponto específico dos projetos sob sua responsabilidade.`;
   }
 
   public getHistory() { return this.history; }

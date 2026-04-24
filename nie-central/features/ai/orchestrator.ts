@@ -12,26 +12,31 @@ import * as panelTools from '@/lib/addvalu/tools/panelTools';
 import * as analyticsTools from '@/lib/addvalu/tools/analyticsTools';
 
 // ============================================
-// SYSTEM PROMPT EXECUTIVO (IA FORMATADORA)
+// SYSTEM PROMPT EXECUTIVO
 // ============================================
 
-export const ADDVALU_SYSTEM_PROMPT = `
-Você é a Addvalu, copiloto executivo virtual do NIE (Núcleo de Inteligência Estratégica) da Addvalora Brasil.
+export const ADDVALU_SYSTEM_PROMPT = `Você é a Addvalu, copiloto operacional do NIE (Núcleo de Inteligência Estratégica).
 
-PAPEL ATUAL:
-Você é uma IA FORMATADORA. Seu objetivo é pegar os dados REAIS fornecidos pelo backend e transformá-los em uma resposta clara, executiva e elegante para o usuário.
+SUA FUNÇÃO:
+Atuar como uma ferramenta de consulta direta e execução. Priorize fatos, status e dados estruturados sobre qualquer narrativa.
 
-DIRETRIZES DE ATUAÇÃO:
-- Responda APENAS com base nos dados do "toolResult" fornecido.
-- NUNCA invente nomes de projetos, quantidades ou status que não estejam no resultado da ferramenta.
-- Se o resultado estiver vazio (count: 0 ou lista vazia), informe que não encontrou itens para essa solicitação específica no escopo atual do usuário.
-- Mantenha o tom de analista sênior: preciso, direto e analítico.
-- Comece DIRETO pela resposta. Evite introduções genéricas.
-- Use tabelas ou listas se houver muitos itens para facilitar a leitura executiva.
-- Se houver agrupamento (ex: por diretoria), respeite essa estrutura na resposta.
+REGRAS ABSOLUTAS:
+1. TOOL FIRST: Sua primeira reação deve ser buscar dados.
+2. RESPOSTA DIRETA: Comece imediatamente com a informação solicitada.
+3. SEM PERSONA: Não use saudações longas, apresentações ou frases de preenchimento.
+4. PROIBIDO COMPLETAMENTE:
+   - "Recebi sua solicitação..."
+   - "Como sou uma IA formatadora..."
+   - "Estou à disposição para detalhar..."
+   - "Posso aprofundar..."
+   - "Sob sua responsabilidade..."
+   - "Entendi o que você precisa..."
+5. FALLBACK MÍNIMO: Se não encontrar o dado, diga apenas: "Não localizei essa referência nos projetos ou painéis disponíveis. Pode me dizer se você quer consultar um projeto, painel ou análise?"
 
-IMPORTANTE: Se o usuário pedir algo que não está nos dados, diga que não possui essa informação no momento.
-`;
+ESTILO:
+- Técnico, seco e preciso.
+- Formato de dashboard (bullets e negrito).
+- Foco em: Status, Responsável, Próximos Passos.`;
 
 // ============================================
 // ORQUESTRADOR DE CONVERSA (AGENTE COM TOOLS)
@@ -69,9 +74,30 @@ class AddvaluOrchestrator {
     return AddvaluOrchestrator.instance;
   }
 
+  /**
+   * Entity Resolver - Localiza projetos ou painéis citados na pergunta
+   */
+  private resolveEntityMention(question: string, projects: Project[]): Project | null {
+    const q = question.toLowerCase().trim();
+    
+    // Busca exata ou parcial por nome de projeto
+    const project = projects.find(p => 
+      q.includes(p.nome.toLowerCase()) || 
+      p.nome.toLowerCase().includes(q)
+    );
+
+    return project || null;
+  }
+
   // Executa a ferramenta correta baseada na intenção
-  private async executeTool(tool: AddvaluTool, user: User): Promise<any> {
-    const projects = MOCK_PROJECTS; // Fetch real em produção
+  private async executeTool(tool: AddvaluTool, user: User, question: string): Promise<any> {
+    const projects = MOCK_PROJECTS;
+
+    // 1. Entity Resolution Primeiro (Prioridade Máxima)
+    const resolvedEntity = this.resolveEntityMention(question, projects);
+    if (resolvedEntity) {
+      return projectTools.getProjectDetails(projects, user, resolvedEntity.id);
+    }
 
     switch (tool) {
       case 'getCompletedProjects':
@@ -96,9 +122,9 @@ class AddvaluOrchestrator {
         const authorizedSum = filterAIContextByUserAccess(projects, user);
         return analyticsTools.getExecutiveSummary(authorizedSum);
       case 'summarizeRisks':
-        return projectTools.getCriticalProjects(projects, user); // Simplificado
+        return projectTools.getCriticalProjects(projects, user);
       default:
-        return { message: "Consulta geral sobre o sistema." };
+        return null;
     }
   }
 
@@ -117,16 +143,16 @@ class AddvaluOrchestrator {
     const tool = routeQuestionToTool(question, this.memory);
     
     // 2. Execute Tool (Dados Reais)
-    const toolResult = await this.executeTool(tool, user);
+    const toolResult = await this.executeTool(tool, user, question);
 
-    // 3. Build Context for LLM
+    // 3. Build Context
     const context: AddvaluContext = {
       question,
       intent: tool,
       toolUsed: tool,
       toolResult: toolResult,
       memory: this.memory,
-      events: this.events.slice(0, 5) // Últimos 5 eventos para contexto
+      events: this.events.slice(0, 5)
     };
 
     // 4. Update Memory
@@ -138,6 +164,72 @@ class AddvaluOrchestrator {
     };
 
     return context;
+  }
+
+  /**
+   * Gera a resposta final formatada baseada no contexto e dados reais
+   */
+  public async generateResponse(context: AddvaluContext, user: User): Promise<string> {
+    const { intent, toolResult, question } = context;
+    const q = question.toLowerCase();
+
+    // Casos Básicos: Saudações
+    if (q === 'olá' || q === 'oi' || q.startsWith('bom dia') || q.startsWith('boa tarde')) {
+      return "Olá! Posso ajudar com projetos, painéis, riscos ou prioridades do NIE.";
+    }
+
+    // Se a ferramenta retornou um projeto específico (Entity Resolution)
+    if (toolResult?.tool === 'getProjectDetails' && toolResult.item) {
+      const p = toolResult.item;
+      return `### ${p.nome}
+**Status:** ${p.status.toUpperCase()}
+**Diretoria:** ${p.diretoria}
+**Responsável:** ${p.responsavel || 'Não definido'}
+
+${p.descricao ? `**Descrição:** ${p.descricao}` : ''}
+${p.link ? `**Link:** [Acessar Projeto](${p.link})` : ''}`;
+    }
+
+    // Listagem de Projetos
+    if (['getCompletedProjects', 'getActiveProjects', 'getPlanningProjects', 'getCriticalProjects'].includes(intent)) {
+      if (!toolResult || toolResult.count === 0) {
+        return `Não localizei projetos com esse status no seu escopo atual.`;
+      }
+      return `### Projetos ${intent.replace('get', '').replace('Projects', '')} (${toolResult.count})
+${toolResult.items.map((p: any) => `- **${p.name}** [${p.status}] - ${p.directorate}`).join('\n')}`;
+    }
+
+    // Painéis
+    if (intent === 'getPanels') {
+      if (!toolResult || toolResult.count === 0) {
+        return "Não há painéis disponíveis para seu nível de acesso.";
+      }
+      return `### Painéis Disponíveis (${toolResult.count})
+${toolResult.items.map((p: any) => `- **${p.name}** - [Abrir](${p.link})`).join('\n')}`;
+    }
+
+    // Resumo Executivo
+    if (intent === 'getExecutiveSummary' && toolResult) {
+      return `### Panorama Executivo NIE
+Atualmente temos **${toolResult.active} projetos ativos** e **${toolResult.completed} concluídos**.
+
+**Destaques:**
+- Total de Projetos: ${toolResult.total}
+- Aguardando Início: ${toolResult.planning}
+- Pontos de Atenção: ${toolResult.critical || 0}`;
+    }
+
+    // Agrupamento por Diretoria
+    if (intent === 'getProjectsByDirectorate' && toolResult) {
+      const entries = Object.entries(toolResult);
+      if (entries.length === 0) return "Não há dados agrupados por diretoria no momento.";
+      
+      return `### Projetos por Diretoria
+${entries.map(([dir, projs]: [string, any]) => `- **${dir}**: ${projs.length} projetos`).join('\n')}`;
+    }
+
+    // Fallback Natural
+    return "Não encontrei essa referência nos projetos ou painéis disponíveis. Pode me dizer se você quer consultar um projeto, painel ou análise?";
   }
 }
 

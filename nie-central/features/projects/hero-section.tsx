@@ -9,7 +9,15 @@ import { motion } from 'framer-motion';
 import { Sparkles, ArrowDown } from 'lucide-react';
 import Image from 'next/image';
 
+import { useProjects } from '@/features/projects/use-projects';
+
 export function HeroSection() {
+  const { projects } = useProjects();
+
+  // Calcular estatísticas reais
+  const totalProjects = projects.filter(p => p.tipo === 'projeto').length;
+  const uniqueDirectorates = new Set(projects.map(p => p.diretoria)).size;
+
   return (
     <section className="relative overflow-hidden">
       {/* Background Effects com cores Addvalora */}
@@ -139,8 +147,8 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
           >
             {[
-              { value: '32', label: 'Projetos Totais', color: '#0055A4' },
-              { value: '12', label: 'Diretorias', color: '#F47920' },
+              { value: totalProjects.toString(), label: 'Projetos Totais', color: '#0055A4' },
+              { value: uniqueDirectorates.toString(), label: 'Diretorias', color: '#F47920' },
               { value: '100%', label: 'Seguro', color: '#0055A4' },
             ].map((stat, index) => (
               <motion.div

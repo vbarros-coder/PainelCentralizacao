@@ -63,11 +63,11 @@ export function useProjects() {
       }
     }
     
-    // Merge project destaques with user destaques
+    // Merge project favorites
     setProjects(accessibleProjects.map((p) => ({
       ...p,
       favorito: favorites.includes(p.id),
-      destaque: p.destaque || destaques.includes(p.id), // Combine admin destaque with user destaque
+      destaque: destaques.includes(p.id), // Use only user destaque
     })));
     
     // Simulate loading
@@ -100,16 +100,32 @@ export function useProjects() {
 
   // Toggle favorite
   const toggleFavorite = useCallback((projectId: string) => {
-    setProjects((prev) => {
-      const project = prev.find((p) => p.id === projectId);
-      if (project) {
-        saveFavorites(projectId, !project.favorito);
-      }
-      return prev.map((p) =>
-        p.id === projectId ? { ...p, favorito: !p.favorito } : p
-      );
-    });
-  }, [saveFavorites]);
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id === projectId) {
+          const newDestaque = !p.destaque;
+          
+          // Save to localStorage using the same logic as toggleUserDestaque
+          setUserDestaques((prevDestaques) => {
+            const newDestaques = prevDestaques.includes(projectId)
+              ? prevDestaques.filter((id) => id !== projectId)
+              : [...prevDestaques, projectId];
+            
+            if (isClient()) {
+              localStorage.setItem(
+                `${USER_DESTAQUES_STORAGE_KEY}_${user?.id || 'guest'}`,
+                JSON.stringify(newDestaques)
+              );
+            }
+            return newDestaques;
+          });
+
+          return { ...p, destaque: newDestaque };
+        }
+        return p;
+      })
+    );
+  }, [user?.id]);
 
   // Toggle user destaque (personal highlight)
   const toggleUserDestaque = useCallback((projectId: string) => {
@@ -174,6 +190,14 @@ export function useProjects() {
 
     // Apply sorting
     result.sort((a, b) => {
+      // Prioridade 1: Ativo primeiro
+      if (a.status === 'ativo' && b.status !== 'ativo') return -1;
+      if (a.status !== 'ativo' && b.status === 'ativo') return 1;
+
+      // Prioridade 2: Destaque
+      if (a.destaque && !b.destaque) return -1;
+      if (!a.destaque && b.destaque) return 1;
+
       let comparison = 0;
 
       switch (sort.by) {

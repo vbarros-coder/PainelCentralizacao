@@ -123,7 +123,7 @@ export function ProjectCard({
               </motion.div>
             )}
 
-            {!hasLink && (
+            {!hasLink && project.status !== 'ativo' && (
               <Badge 
                 variant="default" 
                 size="sm" 
