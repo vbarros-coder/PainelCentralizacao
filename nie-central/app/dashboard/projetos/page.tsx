@@ -6,21 +6,24 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderKanban, Search, Filter, Sparkles } from 'lucide-react';
+import { 
+  FolderKanban, 
+} from 'lucide-react';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { ProjectCard } from '@/features/projects/project-card';
+import { ProjectFiltersComponent } from '@/features/projects/project-filters';
 import { ComingSoonModal } from '@/features/projects/coming-soon-modal';
 import { Project } from '@/types';
 import { useState } from 'react';
-import { Input, Button, Badge } from '@/components/ui';
+import { useProjects } from '@/features/projects/use-projects';
 import { cn } from '@/lib/utils';
 
-import { useProjects } from '@/features/projects/use-projects';
-
 function ProjetosContent() {
-  const { filteredProjects, projects, isLoading, filters, setFilters } = useProjects();
+  const { filteredProjects, isLoading, filters, setFilters, sort, setSort } = useProjects();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const handleAccess = (project: Project) => {
     if (project.link === '#') {
@@ -57,36 +60,25 @@ function ProjetosContent() {
                 Lista completa de projetos da Central NIE
               </p>
             </div>
-
-            {/* Filtros */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant={filters.apenasDestaque ? "primary" : "ghost"}
-                size="sm"
-                onClick={() => setFilters({ ...filters, apenasDestaque: !filters.apenasDestaque })}
-                className={cn(
-                  "flex items-center gap-2 border",
-                  !filters.apenasDestaque && "border-gray-200 dark:border-gray-800"
-                )}
-              >
-                <Sparkles className={cn("w-4 h-4", filters.apenasDestaque && "fill-current")} />
-                Destaques
-              </Button>
-
-              <div className="w-full md:w-64">
-                <Input
-                  placeholder="Buscar projetos..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  leftIcon={<Search className="w-4 h-4" />}
-                  className="h-9"
-                />
-              </div>
-            </div>
           </div>
+
+          {/* Barra de Busca e Filtros */}
+          <ProjectFiltersComponent
+            filters={filters}
+            sort={sort}
+            onFilterChange={setFilters}
+            onSortChange={setSort}
+            resultCount={onlyProjects.length}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Grid de Projetos */}
+        <div className={cn(
+          "grid gap-6",
+          viewMode === 'grid' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+        )}>
           <AnimatePresence mode="popLayout">
             {onlyProjects.map((project, index) => (
               <ProjectCard
@@ -106,10 +98,10 @@ function ProjetosContent() {
         />
 
         {onlyProjects.length === 0 && (
-          <div className="text-center py-20">
+          <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
             <FolderKanban className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-500">Nenhum projeto encontrado</h3>
-            <p className="text-sm text-gray-400">Você não tem permissão para acessar nenhum projeto nesta diretoria.</p>
+            <p className="text-sm text-gray-400">Tente ajustar seus filtros ou busca.</p>
           </div>
         )}
       </div>

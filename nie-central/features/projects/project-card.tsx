@@ -34,7 +34,7 @@ export function ProjectCard({
   index = 0 
 }: ProjectCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { toggleFavorite } = useProjects();
+  const { toggleFavorite, toggleHighlight } = useProjects();
 
   const categoryStyle = categoryColors[project.categoria];
   const statusStyle = statusColors[project.status];
@@ -44,6 +44,12 @@ export function ProjectCard({
     e.preventDefault();
     e.stopPropagation();
     toggleFavorite(project.id);
+  };
+
+  const handleHighlight = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleHighlight(project.id);
   };
 
   const handleAccess = (e: React.MouseEvent) => {
@@ -96,34 +102,31 @@ export function ProjectCard({
           <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
             <button
               onClick={handleFavorite}
+              title="Favorito"
               className={cn(
                 "p-1.5 rounded-full transition-all duration-200",
                 project.favorito 
-                  ? "bg-amber-100 text-amber-500" 
-                  : "bg-black/5 text-gray-400 hover:bg-black/10 hover:text-amber-500"
+                  ? "bg-amber-100 text-amber-500 shadow-sm" 
+                  : "bg-white/80 dark:bg-black/20 text-gray-400 hover:bg-white dark:hover:bg-black/40 hover:text-amber-500 shadow-sm"
               )}
             >
               <Star className={cn("w-4 h-4", project.favorito && "fill-current")} />
             </button>
 
-            {project.destaque && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              >
-                <Badge 
-                  variant="warning" 
-                  size="sm" 
-                  className="shadow-sm flex items-center gap-1 bg-[#0055A4]/10 text-[#0055A4] border-[#0055A4]/20"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  Destaque
-                </Badge>
-              </motion.div>
-            )}
+            <button
+              onClick={handleHighlight}
+              title="Destaque"
+              className={cn(
+                "p-1.5 rounded-full transition-all duration-200",
+                project.destaque 
+                  ? "bg-[#0055A4]/10 text-[#0055A4] shadow-sm ring-1 ring-[#0055A4]/20" 
+                  : "bg-white/80 dark:bg-black/20 text-gray-400 hover:bg-white dark:hover:bg-black/40 hover:text-[#0055A4] shadow-sm"
+              )}
+            >
+              <Sparkles className={cn("w-4 h-4", project.destaque && "fill-current")} />
+            </button>
 
-            {!hasLink && project.status !== 'ativo' && (
+            {!hasLink && project.status !== 'ativo' && project.status !== 'concluido' && (
               <Badge 
                 variant="default" 
                 size="sm" 

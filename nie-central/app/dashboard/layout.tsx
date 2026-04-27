@@ -11,6 +11,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { AddvaluChat } from '@/features/ai/addvalu-chat';
+import { ProjectsProvider } from '@/features/projects/projects-context';
 import { cn } from '@/lib/utils';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
@@ -47,7 +48,9 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <ProjectsProvider>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </ProjectsProvider>
     </ProtectedRoute>
   );
 }

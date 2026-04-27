@@ -30,7 +30,6 @@ const DIRETORIAS = [
   'Garantia / Fiança / Riscos',
   'Responsabilidade Civil Geral (RCG)',
   'Responsabilidade Civil Profissional (RCP)',
-  'Outros'
 ];
 
 const CARGOS = [

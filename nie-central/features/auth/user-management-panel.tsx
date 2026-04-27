@@ -48,15 +48,11 @@ import { MOCK_PROJECTS } from '@/lib/mock-data';
 // ============================================
 
 const DIRECTORATES = [
-  'Garantia / Fiança / Riscos',
   'Property / Construção',
   'Property / Transportes / Mecânica / Elétrica',
+  'Garantia / Fiança / Riscos',
   'Responsabilidade Civil Geral (RCG)',
   'Responsabilidade Civil Profissional (RCP)',
-  'COO - Addvalora Brasil',
-  'NIE',
-  'Administrativo - Addvalora Brasil',
-  'Addis Latam'
 ];
 
 const ROLES: UserRole[] = [

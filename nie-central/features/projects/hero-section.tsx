@@ -10,13 +10,14 @@ import { Sparkles, ArrowDown } from 'lucide-react';
 import Image from 'next/image';
 
 import { useProjects } from '@/features/projects/use-projects';
+import { DIRETORIAS } from '@/lib/mock-data';
 
 export function HeroSection() {
   const { projects } = useProjects();
 
   // Calcular estatísticas reais
   const totalProjects = projects.filter(p => p.tipo === 'projeto').length;
-  const uniqueDirectorates = new Set(projects.map(p => p.diretoria)).size;
+  const uniqueDirectorates = DIRETORIAS.length;
 
   return (
     <section className="relative overflow-hidden">

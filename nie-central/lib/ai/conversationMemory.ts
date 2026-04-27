@@ -39,10 +39,6 @@ export function updateConversationMemory(
     { key: 'transportes', name: 'Property / Transportes / Mecânica / Elétrica' },
     { key: 'rcg', name: 'Responsabilidade Civil Geral (RCG)' },
     { key: 'rcp', name: 'Responsabilidade Civil Profissional (RCP)' },
-    { key: 'nie', name: 'Núcleo de Inteligência Estratégica' },
-    { key: 'coo', name: 'COO - Addvalora Brasil' },
-    { key: 'ceo', name: 'CEO - Addvalora Brasil' },
-    { key: 'cfo', name: 'CFO - Addvalora Brasil' },
   ];
 
   for (const dir of directorates) {
@@ -99,6 +95,6 @@ export function enrichQuestionWithMemory(
 }
 
 function directorateMentioned(text: string): boolean {
-  const directorates = ['garantia', 'property', 'transportes', 'rcg', 'rcp', 'nie', 'coo', 'ceo', 'cfo'];
+  const directorates = ['garantia', 'property', 'transportes', 'rcg', 'rcp'];
   return directorates.some(d => text.includes(d));
 }

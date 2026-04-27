@@ -28,22 +28,18 @@ interface ProjectFiltersProps {
 
 const categories: { value: ProjectCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'Todas Categorias' },
-  { value: 'estrategia', label: 'Estratégia' },
-  { value: 'operacional', label: 'Operacional' },
-  { value: 'tecnologia', label: 'Tecnologia' },
-  { value: 'financeiro', label: 'Financeiro' },
-  { value: 'rh', label: 'Recursos Humanos' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'juridico', label: 'Jurídico' },
+  ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
+    value: value as ProjectCategory,
+    label,
+  })),
 ];
 
 const statuses: { value: ProjectStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos Status' },
-  { value: 'ativo', label: 'Ativo' },
-  { value: 'planejamento', label: 'Planejamento' },
-  { value: 'pausado', label: 'Pausado' },
-  { value: 'concluido', label: 'Concluído' },
-  { value: 'cancelado', label: 'Cancelado' },
+  ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
+    value: value as ProjectStatus,
+    label,
+  })),
 ];
 
 const sortOptions: { value: ProjectSort['by']; label: string }[] = [
