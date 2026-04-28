@@ -1,12 +1,11 @@
 /**
  * User Status Badge
- * Exibe o status de presença do usuário
+ * Exibe o status de presença do usuário como um indicador limpo
  */
 
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Clock, Minus, Circle } from 'lucide-react';
 import { usePresence } from '@/features/presence/presence-context';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -19,26 +18,26 @@ interface UserStatusBadgeProps {
   className?: string;
 }
 
-const statusConfig: Record<PresenceStatus, { color: string; icon: React.ReactNode; label: string }> = {
+const statusConfig: Record<PresenceStatus, { color: string; label: string; ringColor: string }> = {
   available: {
     color: 'bg-green-500',
-    icon: <Check className="w-2.5 h-2.5 text-white" />,
     label: 'Disponível',
+    ringColor: 'ring-white dark:ring-gray-900',
   },
   away: {
     color: 'bg-yellow-500',
-    icon: <Clock className="w-2.5 h-2.5 text-white" />,
     label: 'Ausente',
+    ringColor: 'ring-white dark:ring-gray-900',
   },
   busy: {
     color: 'bg-red-500',
-    icon: <Minus className="w-2.5 h-2.5 text-white" />,
     label: 'Ocupado',
+    ringColor: 'ring-white dark:ring-gray-900',
   },
   offline: {
     color: 'bg-gray-400',
-    icon: <Circle className="w-2.5 h-2.5 text-white" />,
     label: 'Offline',
+    ringColor: 'ring-white dark:ring-gray-900',
   },
 };
 
@@ -50,62 +49,60 @@ export function UserStatusBadge({
 }: UserStatusBadgeProps) {
   const { effectiveStatus, getStatusLabel } = usePresence();
   
-  // Para sistema single-user, usamos o status efetivo do contexto
-  // Quando houver multi-user, isso pode ser expandido
   const status = effectiveStatus;
   const config = statusConfig[status];
   const label = getStatusLabel();
 
   const sizeClasses = {
-    sm: 'w-2.5 h-2.5',
-    md: 'w-3 h-3',
-    lg: 'w-4 h-4',
+    sm: 'w-2.5 h-2.5 ring-[1.5px]',
+    md: 'w-3 h-3 ring-2',
+    lg: 'w-4 h-4 ring-2',
   };
 
-  const iconSizes = {
-    sm: 'w-1.5 h-1.5',
-    md: 'w-2 h-2',
-    lg: 'w-2.5 h-2.5',
-  };
-
-  const content = (
-    <div className={cn('flex items-center gap-2', className)}>
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className={cn(
-          'relative rounded-full flex items-center justify-center',
-          sizeClasses[size],
-          config.color
-        )}
-      >
-        {status === 'available' && (
-          <motion.div
-            className="absolute inset-0 rounded-full bg-green-500"
-            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        )}
-        <span className={cn('relative z-10', iconSizes[size])}>
-          {config.icon}
-        </span>
-      </motion.div>
-      
-      {showLabel && (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          {label}
-        </span>
+  const indicator = (
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      className={cn(
+        'rounded-full shrink-0',
+        config.color,
+        sizeClasses[size],
+        config.ringColor,
+        className
       )}
-    </div>
+    >
+      {status === 'available' && (
+        <motion.div
+          className={cn(
+            'absolute inset-0 rounded-full',
+            config.color
+          )}
+          animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+    </motion.div>
   );
 
   if (showLabel) {
-    return content;
+    return (
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          {indicator}
+        </div>
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {label}
+        </span>
+      </div>
+    );
   }
 
   return (
     <Tooltip content={label}>
-      {content}
+      <div className="relative flex items-center justify-center">
+        {indicator}
+      </div>
     </Tooltip>
   );
 }

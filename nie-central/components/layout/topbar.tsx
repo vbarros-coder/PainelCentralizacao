@@ -253,7 +253,7 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
                 name={user?.name}
                 size="sm"
               />
-              <div className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-gray-900 p-0.5 rounded-full">
+              <div className="absolute -bottom-0.5 -right-0.5">
                 <UserStatusBadge 
                   status={user?.presence?.status || 'offline'} 
                   size="sm" 

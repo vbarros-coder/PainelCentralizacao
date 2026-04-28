@@ -197,7 +197,7 @@ export const MOCK_PROJECTS: Project[] = [
     diretoria: 'Garantia / Fiança / Riscos',
     responsavel: 'Equipe NIE',
     link: 'https://nie-prazos.pages.dev/',
-    destaque: true,
+    destaque: false,
     favorito: false,
     dataInicio: `${CURRENT_YEAR}-01-01`,
     dataFim: `${CURRENT_YEAR}-12-31`,
@@ -214,7 +214,7 @@ export const MOCK_PROJECTS: Project[] = [
     diretoria: 'Responsabilidade Civil Geral (RCG)',
     responsavel: 'Equipe NIE',
     link: 'https://painel.nie-inteligencia.com',
-    destaque: true,
+    destaque: false,
     favorito: false,
 
     dataInicio: `${CURRENT_YEAR}-01-01`,
@@ -264,23 +264,6 @@ export const MOCK_PROJECTS: Project[] = [
   // NOTA: Projetos duplicados removidos (proj-029, proj-030, proj-031)
   // Painel - SLA e Painel - Instituto agora são apenas painéis (painel-003, painel-004)
   // Projeto 25 renomeado para evitar confusão com Painel de Acionamentos
-  {
-    id: 'proj-001',
-    nome: 'Painel de Controle de Acionamentos Brasil',
-    descricao: 'Projeto de desenvolvimento de painel gerencial para consolidação dos acionamentos recebidos das Seguradoras em âmbito nacional.',
-    categoria: 'operacional',
-    status: 'ativo',
-    tipo: 'projeto',
-    diretoria: 'Responsabilidade Civil Geral (RCG)',
-    responsavel: 'Luciana Hey',
-    link: '#',
-    destaque: true,
-    favorito: false,
-
-    dataInicio: `${CURRENT_YEAR}-03-01`,
-    createdAt: `${CURRENT_YEAR}-03-01T00:00:00Z`,
-    updatedAt: `${CURRENT_YEAR}-12-20T10:00:00Z`,
-  },
   {
     id: 'proj-002',
     nome: 'Sistema de Gestão de Sinistros de Engenharia',
@@ -731,23 +714,6 @@ export const MOCK_PROJECTS: Project[] = [
 
     dataInicio: `${CURRENT_YEAR}-12-01`,
     createdAt: `${CURRENT_YEAR}-12-01T00:00:00Z`,
-    updatedAt: `${CURRENT_YEAR}-12-20T10:00:00Z`,
-  },
-  {
-    id: 'proj-028',
-    nome: 'Módulo de Capacitação em IA',
-    descricao: 'Módulo institucional de capacitação prática em IA e automação, com conteúdos didáticos, perfis operacionais (Gems) e trilhas de aprendizagem.',
-    categoria: 'rh',
-    status: 'ativo',
-    tipo: 'projeto',
-    diretoria: 'Responsabilidade Civil Geral (RCG)',
-    responsavel: 'Luciana Hey',
-    link: '#',
-    destaque: true,
-    favorito: false,
-
-    dataInicio: `${CURRENT_YEAR}-09-01`,
-    createdAt: `${CURRENT_YEAR}-09-01T00:00:00Z`,
     updatedAt: `${CURRENT_YEAR}-12-20T10:00:00Z`,
   },
   {
