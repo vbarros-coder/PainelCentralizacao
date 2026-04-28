@@ -235,9 +235,9 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
 
           {/* User Menu */}
           <motion.div
-            whileHover={{ scale: 1.02, backgroundColor: 'rgba(0, 85, 164, 0.05)' }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-3 px-3 py-1.5 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-border"
+            className="flex items-center gap-3 px-3 py-1.5 rounded-xl cursor-pointer transition-all bg-[rgba(0,85,164,0.05)] border border-border hover:bg-[rgba(0,85,164,0.08)]"
           >
             <div className="text-right hidden sm:block">
               <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none mb-1">
@@ -247,7 +247,7 @@ export function Topbar({ isSidebarCollapsed }: TopbarProps) {
                 {user?.email}
               </p>
             </div>
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <Avatar
                 src={user?.avatar}
                 name={user?.name}

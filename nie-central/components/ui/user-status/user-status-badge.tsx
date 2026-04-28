@@ -60,12 +60,9 @@ export function UserStatusBadge({
   };
 
   const indicator = (
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+    <div
       className={cn(
-        'rounded-full shrink-0',
+        'relative rounded-full shrink-0 block',
         config.color,
         sizeClasses[size],
         config.ringColor,
@@ -75,22 +72,20 @@ export function UserStatusBadge({
       {status === 'available' && (
         <motion.div
           className={cn(
-            'absolute inset-0 rounded-full',
+            'absolute inset-0 rounded-full -z-10',
             config.color
           )}
           animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         />
       )}
-    </motion.div>
+    </div>
   );
 
   if (showLabel) {
     return (
       <div className="flex items-center gap-2">
-        <div className="relative">
-          {indicator}
-        </div>
+        {indicator}
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {label}
         </span>
