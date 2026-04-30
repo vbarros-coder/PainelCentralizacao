@@ -13,66 +13,148 @@ import { Card, Button } from '@/components/ui';
 import { MOCK_PROJECTS } from '@/lib/mock-data';
 import { useState, useMemo } from 'react';
 
+// Utilitário: gera e baixa um arquivo
+function downloadFile(filename: string, content: string, mime = 'text/csv;charset=utf-8;') {
+  const BOM = '\uFEFF'; // BOM para UTF-8 — garante acentos no Excel
+  const blob = new Blob([BOM + content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
+function escapeCsv(val: unknown): string {
+  const str = String(val ?? '');
+  return str.includes(',') || str.includes('"') || str.includes('\n')
+    ? `"${str.replace(/"/g, '""')}"`
+    : str;
+}
+
+function rowsToCsv(headers: string[], rows: string[][]): string {
+  return [headers, ...rows].map(r => r.map(escapeCsv).join(',')).join('\n');
+}
+
 function RelatoriosContent() {
   const { user, isGlobalAdmin, logAction } = useAuth();
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  // Lógica para obter o mês e ano atual dinamicamente
   const currentDate = new Date();
-  const currentMonthYear = currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-  const formattedMonthYear = currentMonthYear.charAt(0).toUpperCase() + currentMonthYear.slice(1);
+  const formattedMonthYear = currentDate
+    .toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
+    .replace(/^\w/, c => c.toUpperCase());
 
-  // Automação: Filtrar estatísticas por diretoria (se não for ADM NIE)
-  const stats = useMemo(() => {
-    const projects = MOCK_PROJECTS.filter(p => 
-      isGlobalAdmin() || user?.profile === 'executivo' || p.diretoria === user?.diretoria
-    );
+  const slug = (s: string) =>
+    s.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 
-    return {
-      total: projects.length,
-      ativos: projects.filter(p => p.status === 'ativo').length,
-      concluidos: projects.filter(p => p.status === 'concluido').length,
-      tecnologia: projects.filter(p => p.categoria === 'tecnologia').length,
-      diretoria: user?.diretoria || 'Geral'
-    };
+  // Filtrar apenas projetos reais (tipo === 'projeto') por diretoria/permissão
+  const projects = useMemo(() => {
+    return MOCK_PROJECTS.filter(p => {
+      const isProject = (p as any).tipo === 'projeto' || !(p as any).tipo;
+      const hasAccess =
+        isGlobalAdmin() ||
+        (user as any)?.profile === 'executivo' ||
+        p.diretoria === user?.diretoria;
+      return isProject && hasAccess;
+    });
   }, [user, isGlobalAdmin]);
+
+  const stats = useMemo(() => ({
+    total: projects.length,
+    ativos: projects.filter(p => p.status === 'ativo').length,
+    concluidos: projects.filter(p => p.status === 'concluido').length,
+    tecnologia: projects.filter(p => p.categoria === 'tecnologia').length,
+    diretoria: user?.diretoria || 'Geral',
+  }), [projects, user]);
+
+  // ── Geração dos relatórios ──────────────────────────────────────────────────
+
+  function gerarRelatorioProjectos() {
+    const ativos = projects.filter(p => p.status === 'ativo');
+    const headers = ['ID', 'Nome', 'Status', 'Categoria', 'Diretoria', 'Responsavel', 'Data Inicio'];
+    const rows = ativos.map(p => [
+      p.id,
+      p.nome,
+      p.status,
+      p.categoria || '',
+      p.diretoria || '',
+      p.responsavel || '',
+      (p as any).dataInicio || '',
+    ]);
+    const csv = rowsToCsv(headers, rows);
+    downloadFile(`relatorio_projetos_ativos_${slug(formattedMonthYear)}.csv`, csv);
+  }
+
+  function gerarRelatorioAtividades() {
+    // "Atividades" = histórico de acessos disponível via logAction (simulado aqui com dados reais)
+    const headers = ['Diretoria', 'Total Projetos', 'Ativos', 'Concluidos', 'Planejamento', 'Em Pausa'];
+    // Agrupa projetos por diretoria
+    const byDir = projects.reduce<Record<string, typeof projects>>((acc, p) => {
+      const d = p.diretoria || 'Sem Diretoria';
+      if (!acc[d]) acc[d] = [];
+      acc[d].push(p);
+      return acc;
+    }, {});
+    const rows = Object.entries(byDir).map(([dir, list]) => [
+      dir,
+      String(list.length),
+      String(list.filter(p => p.status === 'ativo').length),
+      String(list.filter(p => p.status === 'concluido').length),
+      String(list.filter(p => p.status === 'planejamento').length),
+      String(list.filter(p => p.status === 'pausado').length),
+    ]);
+    const csv = rowsToCsv(headers, rows);
+    downloadFile(`relatorio_atividades_${slug(formattedMonthYear)}.csv`, csv);
+  }
+
+  function gerarRelatorioPerformance() {
+    const headers = [
+      'Indicador', 'Valor', 'Percentual',
+    ];
+    const total = projects.length || 1;
+    const rows = [
+      ['Total de Projetos', String(projects.length), '100%'],
+      ['Projetos Ativos', String(stats.ativos), `${Math.round((stats.ativos / total) * 100)}%`],
+      ['Projetos Concluídos', String(stats.concluidos), `${Math.round((stats.concluidos / total) * 100)}%`],
+      ['Projetos em Planejamento',
+        String(projects.filter(p => p.status === 'planejamento').length),
+        `${Math.round((projects.filter(p => p.status === 'planejamento').length / total) * 100)}%`],
+      ['Projetos Pausados',
+        String(projects.filter(p => p.status === 'pausado').length),
+        `${Math.round((projects.filter(p => p.status === 'pausado').length / total) * 100)}%`],
+      ['Categoria Tecnologia', String(stats.tecnologia), `${Math.round((stats.tecnologia / total) * 100)}%`],
+      ['Categoria Operacional',
+        String(projects.filter(p => p.categoria === 'operacional').length),
+        `${Math.round((projects.filter(p => p.categoria === 'operacional').length / total) * 100)}%`],
+      ['Escopo', stats.diretoria, ''],
+      ['Gerado em', new Date().toLocaleString('pt-BR'), ''],
+    ];
+    const csv = rowsToCsv(headers, rows);
+    downloadFile(`relatorio_performance_${slug(formattedMonthYear)}.csv`, csv);
+  }
 
   const handleDownload = (name: string) => {
     if (typeof window === 'undefined') return;
     setDownloading(name);
-    
-    // Simular geração e download de PDF/Excel
     setTimeout(() => {
-      const content = `Relatório: ${name}\nEscopo: ${stats.diretoria}\nGerado em: ${new Date().toLocaleString()}\n\nEste é um arquivo de demonstração da Central NIE.`;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${name.toLowerCase().replace(/\s+/g, '_')}_${stats.diretoria.toLowerCase().replace(/\s+/g, '_')}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (name === 'Relatório de Projetos') gerarRelatorioProjectos();
+      else if (name === 'Relatório de Atividades') gerarRelatorioAtividades();
+      else if (name === 'Relatório de Performance') gerarRelatorioPerformance();
       setDownloading(null);
-
-      // Automação: Registrar geração de relatório nos logs
       logAction(`Relatório Gerado: ${name}`, 'ADMIN', `Escopo: ${stats.diretoria}`);
-    }, 1500);
+    }, 600);
   };
 
   return (
     <div className="min-h-screen bg-transparent p-6">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Relatórios
-          </h1>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Relatórios</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Estatísticas e indicadores da Central NIE - {stats.diretoria}
+            Estatísticas e indicadores da Central NIE — {stats.diretoria}
           </p>
         </motion.div>
 
@@ -94,15 +176,11 @@ function RelatoriosContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
-                    <p 
-                      className="text-3xl font-bold mt-1"
-                      style={{ color: stat.color }}
-                    >
+                    <p className="text-3xl font-bold mt-1" style={{ color: stat.color }}>
                       {stat.value}
                     </p>
                   </div>
-                  
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${stat.color}15` }}
                   >
@@ -115,20 +193,27 @@ function RelatoriosContent() {
         </div>
 
         {/* Relatórios Disponíveis */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Relatórios Disponíveis
           </h2>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { name: 'Relatório de Projetos', desc: 'Visão geral de todos os projetos', date: formattedMonthYear },
-              { name: 'Relatório de Atividades', desc: 'Atividades realizadas no período', date: formattedMonthYear },
-              { name: 'Relatório de Performance', desc: 'Indicadores de performance', date: formattedMonthYear },
+              {
+                name: 'Relatório de Projetos',
+                desc: `Todos os ${stats.ativos} projetos ativos — dados completos em CSV`,
+                date: formattedMonthYear,
+              },
+              {
+                name: 'Relatório de Atividades',
+                desc: 'Distribuição de projetos por diretoria e status',
+                date: formattedMonthYear,
+              },
+              {
+                name: 'Relatório de Performance',
+                desc: 'Indicadores percentuais de performance por categoria e status',
+                date: formattedMonthYear,
+              },
             ].map((rel, index) => (
               <motion.div
                 key={rel.name}
@@ -142,20 +227,13 @@ function RelatoriosContent() {
                       <FileText className="w-6 h-6 text-[#0055A4]" />
                     </div>
                   </div>
-
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                    {rel.name}
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 flex-1">
-                    {rel.desc}
-                  </p>
-
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{rel.name}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 flex-1">{rel.desc}</p>
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
                     <span className="text-sm font-medium text-gray-400">{rel.date}</span>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       leftIcon={<Download className="w-4 h-4" />}
                       isLoading={downloading === rel.name}
                       onClick={() => handleDownload(rel.name)}
@@ -175,7 +253,6 @@ function RelatoriosContent() {
 
 export default function RelatoriosPage() {
   const { canAccessReports } = useAuth();
-  
   return (
     <ProtectedRoute>
       {canAccessReports() ? (
