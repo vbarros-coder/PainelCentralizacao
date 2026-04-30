@@ -33,7 +33,7 @@ import {
 
 const AUTH_STORAGE_KEY = 'nie_auth_session_v1';
 const USER_PREFERENCES_KEY = 'nie_user_preferences_v1';
-const USERS_DB_KEY = 'nie_users_db_v1'; // Simulação de banco de dados de usuários
+const USERS_DB_KEY = 'nie_users_db_v2'; // v2 — reinicia sem usuários de exemplo
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 horas
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutos
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isClient()) return;
     
     const storedUsers = localStorage.getItem(USERS_DB_KEY);
-    const storedPasswords = localStorage.getItem('nie_passwords_db_v1');
+    const storedPasswords = localStorage.getItem('nie_passwords_db_v2');
     const storedLogs = localStorage.getItem('nie_logs_v1');
     
     if (storedUsers) {
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       // Primeira vez, popular com MOCK_PASSWORDS
       setPasswordsDb(MOCK_PASSWORDS);
-      localStorage.setItem('nie_passwords_db_v1', JSON.stringify(MOCK_PASSWORDS));
+      localStorage.setItem('nie_passwords_db_v2', JSON.stringify(MOCK_PASSWORDS));
     }
 
     if (storedLogs) {
@@ -374,7 +374,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (isClient()) {
       localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsersDb));
-      localStorage.setItem('nie_passwords_db_v1', JSON.stringify(newPasswordsDb));
+      localStorage.setItem('nie_passwords_db_v2', JSON.stringify(newPasswordsDb));
     }
 
     logAction('Novo cadastro realizado', 'AUTH', `Usuário: ${newUser.name} (${newUser.email})`, newUser);
