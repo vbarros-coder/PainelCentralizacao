@@ -174,8 +174,8 @@ export async function GET() {
     configured: info.configured,
     provider: info.provider,
     model: info.model,
-    // Diagnóstico seguro - nunca retorna a key, só o tipo/tamanho
     apiKeyLength: info.apiKeyLength,
-    apiKeyPrefix: info.apiKeyPrefix, // ex.: "sk-proj" ou "sk-...."
+    apiKeyPrefix: info.apiKeyPrefix,
+    fallback: info.fallback,
   });
 }

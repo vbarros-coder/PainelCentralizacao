@@ -1,14 +1,24 @@
 /**
  * LLM Provider Abstraction
  *
- * Abstração agnóstica para chamar diferentes providers (OpenAI / Anthropic).
+ * Providers suportados:
+ *   - openai     (pago)
+ *   - anthropic  (pago)
+ *   - groq       (grátis - https://console.groq.com)
+ *   - gemini     (grátis - https://aistudio.google.com/app/apikey)
+ *
  * Uso exclusivamente server-side. A API key é lida de variáveis de ambiente
  * e NUNCA é exposta ao frontend.
  *
- * Env vars esperadas:
- *   LLM_PROVIDER  -> "openai" | "anthropic" (default: "openai")
- *   LLM_MODEL     -> ex: "gpt-4o-mini", "claude-3-5-sonnet-latest"
- *   LLM_API_KEY   -> chave do provider
+ * Env vars PRIMÁRIAS (obrigatórias):
+ *   LLM_PROVIDER  -> "openai" | "anthropic" | "groq" | "gemini" (default: "openai")
+ *   LLM_MODEL     -> ex: "llama-3.3-70b-versatile", "gemini-2.0-flash"
+ *   LLM_API_KEY   -> chave do provider primário
+ *
+ * Env vars FALLBACK (opcionais — se o primário falhar, tenta o secundário):
+ *   LLM_FALLBACK_PROVIDER
+ *   LLM_FALLBACK_MODEL
+ *   LLM_FALLBACK_API_KEY
  */
 
 import OpenAI from 'openai';
@@ -30,6 +40,8 @@ export interface LLMResponse {
   provider: string;
   model: string;
 }
+
+export type LLMProvider = 'openai' | 'anthropic' | 'groq' | 'gemini';
 
 export type LLMErrorCode =
   | 'missing_api_key'
@@ -56,13 +68,41 @@ export class LLMError extends Error {
   }
 }
 
-function resolveConfig() {
-  const provider = (process.env.LLM_PROVIDER || 'openai').trim().toLowerCase();
+// Default model por provider quando LLM_MODEL não é definido
+const DEFAULT_MODELS: Record<LLMProvider, string> = {
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-3-5-sonnet-latest',
+  groq: 'llama-3.3-70b-versatile',
+  gemini: 'gemini-2.0-flash',
+};
+
+function normalizeProvider(val: string | undefined): LLMProvider {
+  const v = (val || 'openai').trim().toLowerCase();
+  if (v === 'groq' || v === 'gemini' || v === 'anthropic' || v === 'openai') return v;
+  return 'openai';
+}
+
+interface PrimaryConfig {
+  provider: LLMProvider;
+  apiKey: string;
+  model: string;
+}
+
+function resolveConfig(): PrimaryConfig {
+  const provider = normalizeProvider(process.env.LLM_PROVIDER);
   const apiKey = (process.env.LLM_API_KEY || '').trim();
   const rawModel = (process.env.LLM_MODEL || '').trim();
-  const model =
-    rawModel ||
-    (provider === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini');
+  const model = rawModel || DEFAULT_MODELS[provider];
+  return { provider, apiKey, model };
+}
+
+function resolveFallbackConfig(): PrimaryConfig | null {
+  const raw = (process.env.LLM_FALLBACK_PROVIDER || '').trim();
+  const apiKey = (process.env.LLM_FALLBACK_API_KEY || '').trim();
+  if (!raw || !apiKey) return null;
+  const provider = normalizeProvider(raw);
+  const rawModel = (process.env.LLM_FALLBACK_MODEL || '').trim();
+  const model = rawModel || DEFAULT_MODELS[provider];
   return { provider, apiKey, model };
 }
 
@@ -71,13 +111,21 @@ export function isLLMConfigured(): boolean {
 }
 
 export function getLLMInfo() {
-  const { provider, apiKey, model } = resolveConfig();
+  const primary = resolveConfig();
+  const fallback = resolveFallbackConfig();
   return {
-    configured: Boolean(apiKey),
-    provider,
-    model,
-    apiKeyLength: apiKey ? apiKey.length : 0,
-    apiKeyPrefix: apiKey ? apiKey.slice(0, 7) : '',
+    configured: Boolean(primary.apiKey),
+    provider: primary.provider,
+    model: primary.model,
+    apiKeyLength: primary.apiKey ? primary.apiKey.length : 0,
+    apiKeyPrefix: primary.apiKey ? primary.apiKey.slice(0, 7) : '',
+    fallback: fallback
+      ? {
+          provider: fallback.provider,
+          model: fallback.model,
+          apiKeyLength: fallback.apiKey.length,
+        }
+      : null,
   };
 }
 
@@ -87,17 +135,14 @@ export function getLLMInfo() {
 function classifyError(err: unknown, provider: string): LLMError {
   const anyErr = err as any;
 
-  // OpenAI SDK v4+: erros têm .status, .message, e .error com corpo completo da API
   const status: number | undefined =
     anyErr?.status ?? anyErr?.response?.status ?? anyErr?.statusCode;
 
-  // Mensagem mais específica da API (ex.: "Unsupported parameter: 'max_tokens' ...")
   const apiMessage: string | undefined =
     anyErr?.error?.message ??
     anyErr?.response?.data?.error?.message ??
     anyErr?.response?.body?.error?.message;
 
-  // Fallback: se nada estiver preenchido, serializa o que der
   let serializedFallback = '';
   if (!apiMessage && !anyErr?.message) {
     try {
@@ -143,7 +188,7 @@ function classifyError(err: unknown, provider: string): LLMError {
   ) {
     return new LLMError(
       'model_not_found',
-      'Modelo configurado não existe ou não está habilitado para o projeto.',
+      'Modelo configurado não existe ou não está habilitado.',
       status,
       rawMsg
     );
@@ -159,24 +204,17 @@ function classifyError(err: unknown, provider: string): LLMError {
   ) {
     return new LLMError('network_error', 'Falha de rede ao chamar o provider.', status, rawMsg);
   }
-  // 400 = Bad Request — geralmente parâmetro/payload inválido
   if (status === 400) {
     return new LLMError(
       'provider_error',
-      `Requisição rejeitada pelo ${provider} (400): ${rawMsg || '[sem mensagem do provider]'}`,
+      `Requisição rejeitada pelo ${provider} (400): ${rawMsg || '[sem mensagem]'}`,
       status,
       rawMsg
     );
   }
   if (status && status >= 500) {
-    return new LLMError(
-      'provider_error',
-      `Erro interno do provider (${status}): ${rawMsg}`,
-      status,
-      rawMsg
-    );
+    return new LLMError('provider_error', `Erro interno (${status}): ${rawMsg}`, status, rawMsg);
   }
-
   return new LLMError(
     'unknown_error',
     rawMsg || `Erro desconhecido chamando ${provider}.`,
@@ -185,10 +223,25 @@ function classifyError(err: unknown, provider: string): LLMError {
   );
 }
 
-async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
+// ==========================================
+// PROVIDER: OpenAI (e compatíveis)
+// ==========================================
+
+/**
+ * Função interna que chama qualquer endpoint compatível com OpenAI.
+ * Groq é 100% OpenAI-compatible, só muda a baseURL.
+ */
+async function callOpenAICompatible(
+  req: LLMRequest,
+  model: string,
+  apiKey: string,
+  providerName: string,
+  baseURL?: string
+): Promise<LLMResponse> {
   const client = new OpenAI({
     apiKey,
-    timeout: 25_000, // 25s — dentro do limite padrão Vercel
+    baseURL,
+    timeout: 25_000,
     maxRetries: 1,
   });
 
@@ -201,24 +254,20 @@ async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promi
   const temperature = req.temperature ?? 0.4;
 
   try {
-    // Tentativa 1: API padrão com max_tokens (funciona em gpt-4o, gpt-4o-mini, gpt-4.1, 3.5-turbo)
     const completion = await client.chat.completions.create({
       model,
       temperature,
       max_tokens: maxTokens,
       messages: baseMessages,
     });
-
     const text = completion.choices?.[0]?.message?.content?.trim() || '';
-    return { text, provider: 'openai', model };
+    return { text, provider: providerName, model };
   } catch (err) {
     const anyErr = err as any;
-    const apiMsg: string =
-      anyErr?.error?.message || anyErr?.message || '';
+    const apiMsg: string = anyErr?.error?.message || anyErr?.message || '';
     const lower = apiMsg.toLowerCase();
 
-    // Se o erro foi por parâmetro (ex.: modelos novos exigem max_completion_tokens),
-    // tenta de novo sem max_tokens.
+    // Retry sem max_tokens se o provider reclamar
     if (
       anyErr?.status === 400 &&
       (lower.includes('max_tokens') ||
@@ -232,45 +281,52 @@ async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promi
           messages: baseMessages,
         } as any);
         const text = retry.choices?.[0]?.message?.content?.trim() || '';
-        return { text, provider: 'openai', model };
+        return { text, provider: providerName, model };
       } catch (retryErr) {
-        throw classifyError(retryErr, 'openai');
+        throw classifyError(retryErr, providerName);
       }
     }
-
-    throw classifyError(err, 'openai');
+    throw classifyError(err, providerName);
   }
 }
 
-async function callAnthropic(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25_000);
+async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
+  return callOpenAICompatible(req, model, apiKey, 'openai');
+}
 
-    let res: Response;
-    try {
-      res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: req.maxTokens ?? 1200,
-          temperature: req.temperature ?? 0.4,
-          system: req.system,
-          messages: req.messages.map((m) => ({
-            role: m.role === 'assistant' ? 'assistant' : 'user',
-            content: m.content,
-          })),
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timer);
-    }
+async function callGroq(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
+  // Groq é totalmente compatível com a API da OpenAI
+  return callOpenAICompatible(req, model, apiKey, 'groq', 'https://api.groq.com/openai/v1');
+}
+
+// ==========================================
+// PROVIDER: Anthropic
+// ==========================================
+
+async function callAnthropic(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: req.maxTokens ?? 1200,
+        temperature: req.temperature ?? 0.4,
+        system: req.system,
+        messages: req.messages.map((m) => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content,
+        })),
+      }),
+      signal: controller.signal,
+    });
 
     if (!res.ok) {
       const bodyText = await res.text();
@@ -280,12 +336,10 @@ async function callAnthropic(req: LLMRequest, model: string, apiKey: string): Pr
       } catch {
         /* keep raw */
       }
-      const fakeErr = {
-        status: res.status,
-        message: parsed?.error?.message || bodyText,
-        type: parsed?.error?.type,
-      };
-      throw classifyError(fakeErr, 'anthropic');
+      throw classifyError(
+        { status: res.status, message: parsed?.error?.message || bodyText, type: parsed?.error?.type },
+        'anthropic'
+      );
     }
 
     const data = await res.json();
@@ -294,22 +348,147 @@ async function callAnthropic(req: LLMRequest, model: string, apiKey: string): Pr
   } catch (err) {
     if (err instanceof LLMError) throw err;
     throw classifyError(err, 'anthropic');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ==========================================
+// PROVIDER: Google Gemini
+// ==========================================
+
+async function callGemini(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
+  // Gemini API: POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=...
+  // System é enviado como systemInstruction. Messages em "contents" com role "user"/"model".
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+    model
+  )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const contents = req.messages.map((m) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: req.system }] },
+        contents,
+        generationConfig: {
+          temperature: req.temperature ?? 0.4,
+          maxOutputTokens: req.maxTokens ?? 1200,
+        },
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const bodyText = await res.text();
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(bodyText);
+      } catch {
+        /* keep raw */
+      }
+      throw classifyError(
+        {
+          status: res.status,
+          message: parsed?.error?.message || bodyText,
+          type: parsed?.error?.status,
+        },
+        'gemini'
+      );
+    }
+
+    const data = await res.json();
+    const text =
+      (data?.candidates?.[0]?.content?.parts || [])
+        .map((p: any) => p?.text || '')
+        .join('')
+        .trim() || '';
+    return { text, provider: 'gemini', model };
+  } catch (err) {
+    if (err instanceof LLMError) throw err;
+    throw classifyError(err, 'gemini');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ==========================================
+// DISPATCHER
+// ==========================================
+
+async function dispatch(
+  req: LLMRequest,
+  cfg: PrimaryConfig
+): Promise<LLMResponse> {
+  switch (cfg.provider) {
+    case 'anthropic':
+      return callAnthropic(req, cfg.model, cfg.apiKey);
+    case 'groq':
+      return callGroq(req, cfg.model, cfg.apiKey);
+    case 'gemini':
+      return callGemini(req, cfg.model, cfg.apiKey);
+    case 'openai':
+    default:
+      return callOpenAI(req, cfg.model, cfg.apiKey);
   }
 }
 
 /**
- * Ponto único de chamada a um LLM.
- * Lança LLMError classificado. Caller é responsável por fallback.
+ * Ponto único de chamada. Tenta provider primário; se falhar com erro
+ * "recuperável" (billing, rate_limit, provider_error, network_error, timeout, unknown_error),
+ * e houver LLM_FALLBACK_* configurado, tenta o fallback automaticamente.
+ * Lança LLMError se tudo falhar.
  */
 export async function callLLM(req: LLMRequest): Promise<LLMResponse> {
-  const { provider, apiKey, model } = resolveConfig();
+  const primary = resolveConfig();
 
-  if (!apiKey) {
+  if (!primary.apiKey) {
     throw new LLMError('missing_api_key', 'LLM_API_KEY não configurada no ambiente.');
   }
 
-  if (provider === 'anthropic') {
-    return callAnthropic(req, model, apiKey);
+  try {
+    return await dispatch(req, primary);
+  } catch (err) {
+    const fallback = resolveFallbackConfig();
+    if (!fallback) throw err;
+
+    const recoverable: LLMErrorCode[] = [
+      'billing_error',
+      'rate_limit',
+      'provider_error',
+      'network_error',
+      'timeout',
+      'unknown_error',
+      'model_not_found',
+    ];
+
+    if (err instanceof LLMError && recoverable.includes(err.code)) {
+      console.warn(
+        `[LLM] primário (${primary.provider}/${primary.model}) falhou com ${err.code}. ` +
+          `Tentando fallback (${fallback.provider}/${fallback.model}).`
+      );
+      try {
+        return await dispatch(req, fallback);
+      } catch (fbErr) {
+        // Se o fallback também falhar, propaga o erro ORIGINAL do primário
+        // para preservar o diagnóstico principal.
+        console.error(
+          `[LLM] fallback (${fallback.provider}) também falhou: ${
+            fbErr instanceof Error ? fbErr.message : 'unknown'
+          }`
+        );
+        throw err;
+      }
+    }
+
+    throw err;
   }
-  return callOpenAI(req, model, apiKey);
 }
