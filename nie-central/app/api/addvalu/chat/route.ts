@@ -8,19 +8,26 @@
  * - Retorna o texto gerado.
  *
  * A API key NÃO trafega para o frontend. Apenas a resposta textual volta.
+ *
+ * Política de erros:
+ *   A rota NUNCA retorna 5xx para erro de LLM. Sempre responde 200 com
+ *   `{ text?: string, llmError?: LLMErrorCode }`. O cliente, ao ver llmError,
+ *   decide usar o fallback determinístico. Isso evita 502 no console do browser.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ADDVALU_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import {
   callLLM,
-  isLLMConfigured,
+  getLLMInfo,
+  LLMError,
   LLMMessage,
-  LLMNotConfiguredError,
 } from '@/lib/ai/llmProvider';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Vercel: garante até 30s de execução (default é 10s no plano Hobby)
+export const maxDuration = 30;
 
 interface ChatRequestBody {
   question: string;
@@ -47,7 +54,6 @@ function buildContextBlock(body: ChatRequestBody): string | null {
     } catch {
       serialized = String(ctx.toolResult);
     }
-    // Cap para não estourar contexto
     if (serialized.length > 8000) serialized = serialized.slice(0, 8000) + '\n... [truncado]';
     parts.push(`Resultado:\n${serialized}`);
   }
@@ -58,6 +64,8 @@ function buildContextBlock(body: ChatRequestBody): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  const info = getLLMInfo();
+
   let body: ChatRequestBody;
   try {
     body = await req.json();
@@ -70,29 +78,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'empty_question' }, { status: 400 });
   }
 
-  if (!isLLMConfigured()) {
-    return NextResponse.json(
-      { error: 'llm_not_configured' },
-      { status: 503 }
-    );
+  // Log inicial seguro (não vaza a key, só o comprimento)
+  console.log(
+    `[ADDVALU /api/chat] incoming POST | provider=${info.provider} model=${info.model} ` +
+      `configured=${info.configured} apiKeyLen=${info.apiKeyLength}`
+  );
+
+  if (!info.configured) {
+    // 200 + diagnóstico para o cliente cair no fallback sem 5xx no console
+    return NextResponse.json({
+      text: null,
+      llmError: 'missing_api_key',
+      provider: info.provider,
+      model: info.model,
+    });
   }
 
   const messages: LLMMessage[] = [];
 
-  // Contexto das tools (se houver) vai como mensagem de system secundária
   const contextBlock = buildContextBlock(body);
   if (contextBlock) {
     messages.push({ role: 'system', content: contextBlock });
   }
 
-  // Histórico recente (últimas 8 mensagens para manter contexto enxuto)
   const history = (body.history || []).slice(-8);
   for (const m of history) {
     if (!m?.content) continue;
     messages.push({ role: m.role, content: m.content });
   }
 
-  // Pergunta atual
   messages.push({ role: 'user', content: question });
 
   try {
@@ -104,8 +118,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (!llmResponse.text) {
-      return NextResponse.json({ error: 'empty_response' }, { status: 502 });
+      console.warn('[ADDVALU /api/chat] LLM retornou texto vazio');
+      return NextResponse.json({
+        text: null,
+        llmError: 'unknown_error',
+        provider: info.provider,
+        model: info.model,
+      });
     }
+
+    console.log(
+      `[ADDVALU /api/chat] OK | provider=${llmResponse.provider} model=${llmResponse.model} chars=${llmResponse.text.length}`
+    );
 
     return NextResponse.json({
       text: llmResponse.text,
@@ -113,25 +137,39 @@ export async function POST(req: NextRequest) {
       model: llmResponse.model,
     });
   } catch (err) {
-    if (err instanceof LLMNotConfiguredError) {
-      return NextResponse.json({ error: 'llm_not_configured' }, { status: 503 });
+    if (err instanceof LLMError) {
+      // Log seguro sem expor a key
+      console.error(
+        `[ADDVALU /api/chat] LLM ${err.code} | provider=${info.provider} model=${info.model} ` +
+          `status=${err.status ?? 'n/a'} msg=${(err.providerMessage || err.message || '').slice(0, 300)}`
+      );
+      return NextResponse.json({
+        text: null,
+        llmError: err.code,
+        llmErrorStatus: err.status ?? null,
+        provider: info.provider,
+        model: info.model,
+      });
     }
-    console.error('[ADDVALU /api/chat] LLM error:', err);
-    return NextResponse.json(
-      { error: 'llm_error', message: err instanceof Error ? err.message : 'unknown' },
-      { status: 502 }
-    );
+
+    const msg = err instanceof Error ? err.message : 'unknown';
+    console.error(`[ADDVALU /api/chat] unexpected error: ${msg}`);
+    return NextResponse.json({
+      text: null,
+      llmError: 'unknown_error',
+      provider: info.provider,
+      model: info.model,
+    });
   }
 }
 
 export async function GET() {
+  const info = getLLMInfo();
   return NextResponse.json({
-    configured: isLLMConfigured(),
-    provider: process.env.LLM_PROVIDER || 'openai',
-    model:
-      process.env.LLM_MODEL ||
-      (process.env.LLM_PROVIDER === 'anthropic'
-        ? 'claude-3-5-sonnet-latest'
-        : 'gpt-4o-mini'),
+    configured: info.configured,
+    provider: info.provider,
+    model: info.model,
+    // Nunca retornamos a key. Só um hash mínimo pra confirmar presença.
+    apiKeyLength: info.apiKeyLength,
   });
 }

@@ -15,9 +15,11 @@ export interface ChatMessage {
 }
 
 interface LLMChatAPIResponse {
-  text?: string;
+  text?: string | null;
   provider?: string;
   model?: string;
+  llmError?: string;
+  llmErrorStatus?: number | null;
   error?: string;
 }
 
@@ -82,11 +84,21 @@ class AddvaluService {
 
       if (!res.ok) {
         const payload: LLMChatAPIResponse = await res.json().catch(() => ({}));
-        console.warn('[ADDVALU] LLM indisponível, usando fallback determinístico:', payload.error);
+        console.warn('[ADDVALU] LLM API HTTP error, usando fallback:', res.status, payload.error);
         return null;
       }
 
       const payload: LLMChatAPIResponse = await res.json();
+
+      if (payload.llmError) {
+        console.warn(
+          `[ADDVALU] LLM indisponível (${payload.llmError}${
+            payload.llmErrorStatus ? `/${payload.llmErrorStatus}` : ''
+          }), usando fallback determinístico`
+        );
+        return null;
+      }
+
       if (!payload.text) return null;
       return { text: payload.text, provider: payload.provider, model: payload.model };
     } catch (err) {

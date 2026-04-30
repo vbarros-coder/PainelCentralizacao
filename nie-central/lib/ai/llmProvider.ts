@@ -31,10 +31,28 @@ export interface LLMResponse {
   model: string;
 }
 
-export class LLMNotConfiguredError extends Error {
-  constructor(msg = 'LLM não configurada. Defina LLM_API_KEY no ambiente.') {
-    super(msg);
-    this.name = 'LLMNotConfiguredError';
+export type LLMErrorCode =
+  | 'missing_api_key'
+  | 'invalid_api_key'
+  | 'billing_error'
+  | 'rate_limit'
+  | 'timeout'
+  | 'model_not_found'
+  | 'provider_error'
+  | 'network_error'
+  | 'unknown_error';
+
+export class LLMError extends Error {
+  code: LLMErrorCode;
+  status?: number;
+  providerMessage?: string;
+
+  constructor(code: LLMErrorCode, message: string, status?: number, providerMessage?: string) {
+    super(message);
+    this.name = 'LLMError';
+    this.code = code;
+    this.status = status;
+    this.providerMessage = providerMessage;
   }
 }
 
@@ -51,62 +69,144 @@ export function isLLMConfigured(): boolean {
   return Boolean(process.env.LLM_API_KEY);
 }
 
-async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
-  const client = new OpenAI({ apiKey });
-  const completion = await client.chat.completions.create({
+export function getLLMInfo() {
+  const { provider, apiKey, model } = resolveConfig();
+  return {
+    configured: Boolean(apiKey),
+    provider,
     model,
-    temperature: req.temperature ?? 0.4,
-    max_tokens: req.maxTokens ?? 1200,
-    messages: [
-      { role: 'system', content: req.system },
-      ...req.messages.map((m) => ({ role: m.role, content: m.content })),
-    ],
+    apiKeyLength: apiKey ? apiKey.length : 0,
+  };
+}
+
+/**
+ * Classifica um erro arbitrário do provider em LLMErrorCode.
+ */
+function classifyError(err: unknown, provider: string): LLMError {
+  // OpenAI SDK errors
+  // @ts-expect-error duck typing
+  const status: number | undefined = err?.status || err?.response?.status;
+  // @ts-expect-error duck typing
+  const rawMsg: string = err?.message || err?.error?.message || String(err);
+  // @ts-expect-error duck typing
+  const errType: string | undefined = err?.type || err?.error?.type || err?.code;
+
+  const lower = (rawMsg || '').toLowerCase();
+
+  if (status === 401 || lower.includes('invalid api key') || lower.includes('incorrect api key')) {
+    return new LLMError('invalid_api_key', 'API key inválida.', status, rawMsg);
+  }
+  if (status === 402 || lower.includes('billing') || lower.includes('quota') || lower.includes('insufficient_quota')) {
+    return new LLMError('billing_error', 'Problema de billing/cota no provider.', status, rawMsg);
+  }
+  if (status === 429 || lower.includes('rate limit')) {
+    return new LLMError('rate_limit', 'Rate limit atingido no provider.', status, rawMsg);
+  }
+  if (status === 404 || lower.includes('model') && lower.includes('not found')) {
+    return new LLMError('model_not_found', 'Modelo configurado não existe ou indisponível.', status, rawMsg);
+  }
+  if (errType === 'ETIMEDOUT' || lower.includes('timeout') || lower.includes('timed out')) {
+    return new LLMError('timeout', 'Timeout ao chamar o provider.', status, rawMsg);
+  }
+  if (errType === 'ENOTFOUND' || errType === 'ECONNREFUSED' || lower.includes('fetch failed') || lower.includes('network')) {
+    return new LLMError('network_error', 'Falha de rede ao chamar o provider.', status, rawMsg);
+  }
+  if (status && status >= 500) {
+    return new LLMError('provider_error', `Erro interno do provider (${status}).`, status, rawMsg);
+  }
+
+  return new LLMError('unknown_error', rawMsg || `Erro desconhecido chamando ${provider}.`, status, rawMsg);
+}
+
+async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
+  const client = new OpenAI({
+    apiKey,
+    timeout: 25_000, // 25s — dentro do limite padrão Vercel
+    maxRetries: 1,
   });
 
-  const text = completion.choices?.[0]?.message?.content?.trim() || '';
-  return { text, provider: 'openai', model };
+  try {
+    const completion = await client.chat.completions.create({
+      model,
+      temperature: req.temperature ?? 0.4,
+      max_tokens: req.maxTokens ?? 1200,
+      messages: [
+        { role: 'system', content: req.system },
+        ...req.messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+    });
+
+    const text = completion.choices?.[0]?.message?.content?.trim() || '';
+    return { text, provider: 'openai', model };
+  } catch (err) {
+    throw classifyError(err, 'openai');
+  }
 }
 
 async function callAnthropic(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
-  // Anthropic separa system como campo top-level.
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: req.maxTokens ?? 1200,
-      temperature: req.temperature ?? 0.4,
-      system: req.system,
-      messages: req.messages.map((m) => ({
-        role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.content,
-      })),
-    }),
-  });
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25_000);
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Anthropic API error ${res.status}: ${body}`);
+    let res: Response;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: req.maxTokens ?? 1200,
+          temperature: req.temperature ?? 0.4,
+          system: req.system,
+          messages: req.messages.map((m) => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content,
+          })),
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!res.ok) {
+      const bodyText = await res.text();
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(bodyText);
+      } catch {
+        /* keep raw */
+      }
+      const fakeErr = {
+        status: res.status,
+        message: parsed?.error?.message || bodyText,
+        type: parsed?.error?.type,
+      };
+      throw classifyError(fakeErr, 'anthropic');
+    }
+
+    const data = await res.json();
+    const text = (data?.content?.[0]?.text || '').trim();
+    return { text, provider: 'anthropic', model };
+  } catch (err) {
+    if (err instanceof LLMError) throw err;
+    throw classifyError(err, 'anthropic');
   }
-
-  const data = await res.json();
-  const text = (data?.content?.[0]?.text || '').trim();
-  return { text, provider: 'anthropic', model };
 }
 
 /**
  * Ponto único de chamada a um LLM.
- * Lança LLMNotConfiguredError quando não há chave configurada — use para fallback.
+ * Lança LLMError classificado. Caller é responsável por fallback.
  */
 export async function callLLM(req: LLMRequest): Promise<LLMResponse> {
   const { provider, apiKey, model } = resolveConfig();
 
   if (!apiKey) {
-    throw new LLMNotConfiguredError();
+    throw new LLMError('missing_api_key', 'LLM_API_KEY não configurada no ambiente.');
   }
 
   if (provider === 'anthropic') {
