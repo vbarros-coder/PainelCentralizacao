@@ -44,6 +44,16 @@ export function AddvaluChat() {
     }
   }, [user]);
 
+  // Abre o chat ao receber evento do botão "?" do topbar
+  useEffect(() => {
+    const handler = () => {
+      setIsOpen(true);
+      setIsMinimized(false);
+    };
+    window.addEventListener('open-addvalu-chat', handler);
+    return () => window.removeEventListener('open-addvalu-chat', handler);
+  }, []);
+
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

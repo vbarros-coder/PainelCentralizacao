@@ -115,7 +115,11 @@ function UserManagementContent() {
   const { getAllUsers, updateUserAdmin, user: currentUser, isGlobalAdmin } = useAuth();
   const { showToast } = useToast();
   const allUsers = getAllUsers();
-  
+
+  // IDs com permissão de excluir: ADM NIE, Luciana Hey e William Fernandez
+  const DELETE_ALLOWED_IDS = ['usr-001', 'usr-ceo-1', 'usr-ceo-2'];
+  const canDelete = currentUser ? DELETE_ALLOWED_IDS.includes(currentUser.id) : false;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
@@ -367,10 +371,18 @@ function UserManagementContent() {
                       </td>
                       
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
-                          {PROFILE_LABELS[user.profile] || user.profile}
-                        </span>
-                        {user.diretoria && <p className="text-xs text-gray-400">{user.diretoria}</p>}
+                        <div>
+                          {user.profile === 'coordenacao' ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 ring-1 ring-purple-300 dark:ring-purple-700">
+                              Coordenação
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
+                              {PROFILE_LABELS[user.profile] || user.profile}
+                            </span>
+                          )}
+                          {user.diretoria && <p className="text-xs text-gray-400 mt-0.5">{user.diretoria}</p>}
+                        </div>
                       </td>
                       
                       <td className="px-6 py-4">
@@ -423,6 +435,17 @@ function UserManagementContent() {
                               title="Reativar"
                             >
                               <UserCheck className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Excluir — só para ADM NIE, Luciana e William */}
+                          {canDelete && user.id !== currentUser?.id && (
+                            <button
+                              onClick={() => openConfirmModal(user, 'delete')}
+                              className="p-2 text-gray-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Excluir usuário"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           
