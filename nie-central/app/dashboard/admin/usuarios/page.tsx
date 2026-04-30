@@ -128,7 +128,7 @@ function UserManagementContent() {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    action: 'block' | 'unblock' | 'deactivate' | 'reactivate' | 'delete' | null;
+    action: 'block' | 'unblock' | 'deactivate' | 'reactivate' | 'delete' | 'approve' | 'reject' | null;
     user: User | null;
   }>({ isOpen: false, action: null, user: null });
 
@@ -206,13 +206,30 @@ function UserManagementContent() {
         setDeletedIds(prev => new Set([...prev, confirmModal.user!.id]));
         showToast(`Usuário ${confirmModal.user.name} excluído`, 'info');
         break;
+      case 'approve':
+        updateUserAdmin(confirmModal.user.id, {
+          status: 'ativo',
+          deactivatedAt: undefined,
+          deactivatedBy: undefined,
+        });
+        showToast(`Acesso de ${confirmModal.user.name} aprovado`, 'success');
+        break;
+      case 'reject':
+        setDeletedIds(prev => new Set([...prev, confirmModal.user!.id]));
+        showToast(`Solicitação de ${confirmModal.user.name} rejeitada`, 'info');
+        break;
     }
     
     setConfirmModal({ isOpen: false, action: null, user: null });
   };
 
-  const openConfirmModal = (user: User, action: 'block' | 'unblock' | 'deactivate' | 'reactivate' | 'delete') => {
-    if (!canEdit) {
+  const openConfirmModal = (user: User, action: 'block' | 'unblock' | 'deactivate' | 'reactivate' | 'delete' | 'approve' | 'reject') => {
+    // Ações de aprovação de acesso: só ADM NIE, Luciana e William
+    if ((action === 'approve' || action === 'reject') && !canDelete) {
+      showToast('Apenas ADM NIE, Luciana Hey e William Fernandez podem aprovar ou rejeitar acessos', 'error');
+      return;
+    }
+    if (!canEdit && action !== 'approve' && action !== 'reject') {
       showToast('Você não tem permissão para realizar esta ação', 'error');
       return;
     }
@@ -251,6 +268,18 @@ function UserManagementContent() {
         title: 'Excluir Usuário',
         message: `Excluir ${confirmModal.user.name}? Esta ação marca o usuário como inativo e não pode ser desfeita.`,
         confirmText: 'Excluir',
+        variant: 'danger' as const,
+      },
+      approve: {
+        title: 'Aprovar Solicitação de Acesso',
+        message: `Aprovar o acesso de ${confirmModal.user.name} ao sistema? O usuário será ativado e poderá fazer login imediatamente.`,
+        confirmText: 'Aprovar Acesso',
+        variant: 'info' as const,
+      },
+      reject: {
+        title: 'Rejeitar Solicitação de Acesso',
+        message: `Rejeitar a solicitação de ${confirmModal.user.name}? O registro será removido da fila de pendentes.`,
+        confirmText: 'Rejeitar',
         variant: 'danger' as const,
       },
     };
@@ -399,6 +428,29 @@ function UserManagementContent() {
                       
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Botões de aprovação — SOMENTE para pendentes e SOMENTE para ADM/Luciana/William */}
+                          {user.status === 'pendente' && canDelete && (
+                            <>
+                              <button
+                                onClick={() => openConfirmModal(user, 'approve')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
+                                title="Aprovar acesso"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Aprovar
+                              </button>
+                              <button
+                                onClick={() => openConfirmModal(user, 'reject')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                                title="Rejeitar solicitação"
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                                Rejeitar
+                              </button>
+                            </>
+                          )}
+
+                          {/* Botões de usuários ativos — só para quem pode editar */}
                           {user.status === 'ativo' && (
                             <>
                               <button
