@@ -77,6 +77,7 @@ function StatusBadge({ status }: { status: UserStatus }) {
     inativo: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
     bloqueado: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     desligado: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    removido: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
   };
 
   const labels = {
@@ -85,6 +86,7 @@ function StatusBadge({ status }: { status: UserStatus }) {
     inativo: 'Inativo',
     bloqueado: 'Bloqueado',
     desligado: 'Desligado',
+    removido: 'Removido',
   };
 
   return (
@@ -120,9 +122,6 @@ function UserManagementContent() {
   const DELETE_ALLOWED_IDS = ['usr-001', 'usr-ceo-1', 'usr-ceo-2'];
   const canDelete = currentUser ? DELETE_ALLOWED_IDS.includes(currentUser.id) : false;
 
-  // IDs excluídos localmente (somem da lista imediatamente)
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
@@ -132,9 +131,9 @@ function UserManagementContent() {
     user: User | null;
   }>({ isOpen: false, action: null, user: null });
 
-  // Filtrar usuários
+  // Filtrar usuários (excluindo removidos, que são deleções/rejeições persistidas)
   const filteredUsers = useMemo(() => {
-    let result = allUsers.filter(u => !deletedIds.has(u.id));
+    let result = allUsers.filter(u => u.status !== 'removido');
     
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -153,14 +152,17 @@ function UserManagementContent() {
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [allUsers, searchQuery, statusFilter]);
 
-  // Estatísticas
-  const stats = useMemo(() => ({
-    total: allUsers.length,
-    ativos: allUsers.filter(u => u.status === 'ativo').length,
-    bloqueados: allUsers.filter(u => u.status === 'bloqueado').length,
-    desligados: allUsers.filter(u => u.status === 'desligado').length,
-    pendentes: allUsers.filter(u => u.status === 'pendente').length,
-  }), [allUsers]);
+  // Estatísticas (excluindo usuários removidos)
+  const stats = useMemo(() => {
+    const visible = allUsers.filter(u => u.status !== 'removido');
+    return {
+      total: visible.length,
+      ativos: visible.filter(u => u.status === 'ativo').length,
+      bloqueados: visible.filter(u => u.status === 'bloqueado').length,
+      desligados: visible.filter(u => u.status === 'desligado').length,
+      pendentes: visible.filter(u => u.status === 'pendente').length,
+    };
+  }, [allUsers]);
 
   const canEdit = isGlobalAdmin();
 
@@ -203,7 +205,7 @@ function UserManagementContent() {
         showToast(`Usuário ${confirmModal.user.name} reativado`, 'success');
         break;
       case 'delete':
-        setDeletedIds(prev => new Set([...prev, confirmModal.user!.id]));
+        updateUserAdmin(confirmModal.user.id, { status: 'removido' });
         showToast(`Usuário ${confirmModal.user.name} excluído`, 'info');
         break;
       case 'approve':
@@ -215,7 +217,7 @@ function UserManagementContent() {
         showToast(`Acesso de ${confirmModal.user.name} aprovado`, 'success');
         break;
       case 'reject':
-        setDeletedIds(prev => new Set([...prev, confirmModal.user!.id]));
+        updateUserAdmin(confirmModal.user.id, { status: 'removido' });
         showToast(`Solicitação de ${confirmModal.user.name} rejeitada`, 'info');
         break;
     }

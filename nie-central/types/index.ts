@@ -16,7 +16,7 @@ export type UserProfile =
   | 'usuario_restrito'
   | 'usuario'; // Compatibilidade
 
-export type UserStatus = 'ativo' | 'pendente' | 'inativo' | 'bloqueado' | 'desligado';
+export type UserStatus = 'ativo' | 'pendente' | 'inativo' | 'bloqueado' | 'desligado' | 'removido';
 
 // ============================================
 // AUDIT LOG
