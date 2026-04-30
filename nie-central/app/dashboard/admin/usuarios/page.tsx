@@ -5,12 +5,12 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, Lock, Unlock, UserX, UserCheck, Trash2, 
   Shield, Clock, AlertCircle, ChevronDown, ChevronUp, 
-  RefreshCw, Filter, Ban, CheckCircle
+  RefreshCw, Filter, Ban, CheckCircle, Mail, User2
 } from 'lucide-react';
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { useAuth } from '@/features/auth/auth-context';
@@ -120,6 +120,9 @@ function UserManagementContent() {
   const DELETE_ALLOWED_IDS = ['usr-001', 'usr-ceo-1', 'usr-ceo-2'];
   const canDelete = currentUser ? DELETE_ALLOWED_IDS.includes(currentUser.id) : false;
 
+  // IDs excluídos localmente (somem da lista imediatamente)
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
@@ -131,7 +134,7 @@ function UserManagementContent() {
 
   // Filtrar usuários
   const filteredUsers = useMemo(() => {
-    let result = allUsers;
+    let result = allUsers.filter(u => !deletedIds.has(u.id));
     
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -200,11 +203,7 @@ function UserManagementContent() {
         showToast(`Usuário ${confirmModal.user.name} reativado`, 'success');
         break;
       case 'delete':
-        updateUserAdmin(confirmModal.user.id, { 
-          status: 'inativo',
-          deactivatedAt: now,
-          deactivatedBy: currentUser?.id 
-        });
+        setDeletedIds(prev => new Set([...prev, confirmModal.user!.id]));
         showToast(`Usuário ${confirmModal.user.name} excluído`, 'info');
         break;
     }
@@ -352,8 +351,9 @@ function UserManagementContent() {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 <AnimatePresence>
                   {filteredUsers.map((user) => (
+                    <Fragment key={user.id}>
                     <motion.tr 
-                      key={user.id}
+                      key={`row-${user.id}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -458,8 +458,55 @@ function UserManagementContent() {
                         </div>
                       </td>
                     </motion.tr>
-                  ))}
-                </AnimatePresence>
+
+                    {/* Painel expandido com perfil detalhado */}
+                    {expandedUser === user.id && (
+                      <motion.tr
+                        key={`${user.id}-expanded`}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <td colSpan={5} className="px-6 pb-4 pt-0 bg-gray-50 dark:bg-gray-800/30">
+                          <div className="flex items-start gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm max-w-sm">
+                            <Avatar src={user.avatar} name={user.name} size="md" />
+                            <div className="flex flex-col gap-1.5 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-gray-900 dark:text-white text-sm">{user.name}</p>
+                                <span className="text-xs text-gray-400">● {user.status === 'ativo' ? 'Online' : 'Offline'}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <User2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                {user.profile === 'coordenacao' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 ring-1 ring-purple-300 dark:ring-purple-700 tracking-wide uppercase">
+                                    Coordenação
+                                  </span>
+                                ) : (
+                                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                                    {PROFILE_LABELS[user.profile] || user.profile}
+                                  </span>
+                                )}
+                              </div>
+                              {user.email && (
+                                <div className="flex items-center gap-1.5">
+                                  <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                  <span className="text-xs text-gray-500 truncate">{user.email}</span>
+                                </div>
+                              )}
+                              {user.diretoria && (
+                                <div className="flex items-center gap-1.5">
+                                  <Shield className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                  <span className="text-xs text-gray-500">{user.diretoria}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )}
+                    </Fragment>
+                  ))}                </AnimatePresence>
               </tbody>
             </table>
           </div>
