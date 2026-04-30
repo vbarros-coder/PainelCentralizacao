@@ -20,6 +20,7 @@ interface LLMChatAPIResponse {
   model?: string;
   llmError?: string;
   llmErrorStatus?: number | null;
+  llmErrorMessage?: string;
   error?: string;
 }
 
@@ -94,7 +95,9 @@ class AddvaluService {
         console.warn(
           `[ADDVALU] LLM indisponível (${payload.llmError}${
             payload.llmErrorStatus ? `/${payload.llmErrorStatus}` : ''
-          }), usando fallback determinístico`
+          }), usando fallback determinístico${
+            payload.llmErrorMessage ? ` | motivo: ${payload.llmErrorMessage}` : ''
+          }`
         );
         return null;
       }

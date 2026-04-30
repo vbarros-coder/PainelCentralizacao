@@ -83,39 +83,85 @@ export function getLLMInfo() {
  * Classifica um erro arbitrário do provider em LLMErrorCode.
  */
 function classifyError(err: unknown, provider: string): LLMError {
-  // OpenAI SDK errors
-  // @ts-expect-error duck typing
-  const status: number | undefined = err?.status || err?.response?.status;
-  // @ts-expect-error duck typing
-  const rawMsg: string = err?.message || err?.error?.message || String(err);
-  // @ts-expect-error duck typing
-  const errType: string | undefined = err?.type || err?.error?.type || err?.code;
+  const anyErr = err as any;
+
+  // OpenAI SDK v4+: erros têm .status, .message, e .error com corpo completo da API
+  const status: number | undefined =
+    anyErr?.status ?? anyErr?.response?.status ?? anyErr?.statusCode;
+
+  // Mensagem mais específica da API (ex.: "Unsupported parameter: 'max_tokens' ...")
+  const apiMessage: string | undefined =
+    anyErr?.error?.message ??
+    anyErr?.response?.data?.error?.message ??
+    anyErr?.response?.body?.error?.message;
+
+  const rawMsg: string = apiMessage || anyErr?.message || String(err);
+
+  const errType: string | undefined =
+    anyErr?.error?.type ?? anyErr?.type ?? anyErr?.code ?? anyErr?.error?.code;
 
   const lower = (rawMsg || '').toLowerCase();
 
   if (status === 401 || lower.includes('invalid api key') || lower.includes('incorrect api key')) {
     return new LLMError('invalid_api_key', 'API key inválida.', status, rawMsg);
   }
-  if (status === 402 || lower.includes('billing') || lower.includes('quota') || lower.includes('insufficient_quota')) {
+  if (
+    status === 402 ||
+    lower.includes('billing') ||
+    lower.includes('quota') ||
+    lower.includes('insufficient_quota')
+  ) {
     return new LLMError('billing_error', 'Problema de billing/cota no provider.', status, rawMsg);
   }
   if (status === 429 || lower.includes('rate limit')) {
     return new LLMError('rate_limit', 'Rate limit atingido no provider.', status, rawMsg);
   }
-  if (status === 404 || lower.includes('model') && lower.includes('not found')) {
-    return new LLMError('model_not_found', 'Modelo configurado não existe ou indisponível.', status, rawMsg);
+  if (
+    status === 404 ||
+    (lower.includes('model') && (lower.includes('not found') || lower.includes('does not exist')))
+  ) {
+    return new LLMError(
+      'model_not_found',
+      'Modelo configurado não existe ou indisponível.',
+      status,
+      rawMsg
+    );
   }
   if (errType === 'ETIMEDOUT' || lower.includes('timeout') || lower.includes('timed out')) {
     return new LLMError('timeout', 'Timeout ao chamar o provider.', status, rawMsg);
   }
-  if (errType === 'ENOTFOUND' || errType === 'ECONNREFUSED' || lower.includes('fetch failed') || lower.includes('network')) {
+  if (
+    errType === 'ENOTFOUND' ||
+    errType === 'ECONNREFUSED' ||
+    lower.includes('fetch failed') ||
+    lower.includes('network')
+  ) {
     return new LLMError('network_error', 'Falha de rede ao chamar o provider.', status, rawMsg);
   }
+  // 400 = Bad Request — geralmente parâmetro/payload inválido
+  if (status === 400) {
+    return new LLMError(
+      'provider_error',
+      `Requisição rejeitada pelo ${provider} (400): ${rawMsg}`,
+      status,
+      rawMsg
+    );
+  }
   if (status && status >= 500) {
-    return new LLMError('provider_error', `Erro interno do provider (${status}).`, status, rawMsg);
+    return new LLMError(
+      'provider_error',
+      `Erro interno do provider (${status}): ${rawMsg}`,
+      status,
+      rawMsg
+    );
   }
 
-  return new LLMError('unknown_error', rawMsg || `Erro desconhecido chamando ${provider}.`, status, rawMsg);
+  return new LLMError(
+    'unknown_error',
+    rawMsg || `Erro desconhecido chamando ${provider}.`,
+    status,
+    rawMsg
+  );
 }
 
 async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promise<LLMResponse> {
@@ -125,20 +171,52 @@ async function callOpenAI(req: LLMRequest, model: string, apiKey: string): Promi
     maxRetries: 1,
   });
 
+  const baseMessages = [
+    { role: 'system' as const, content: req.system },
+    ...req.messages.map((m) => ({ role: m.role, content: m.content })),
+  ];
+
+  const maxTokens = req.maxTokens ?? 1200;
+  const temperature = req.temperature ?? 0.4;
+
   try {
+    // Tentativa 1: API padrão com max_tokens (funciona em gpt-4o, gpt-4o-mini, gpt-4.1, 3.5-turbo)
     const completion = await client.chat.completions.create({
       model,
-      temperature: req.temperature ?? 0.4,
-      max_tokens: req.maxTokens ?? 1200,
-      messages: [
-        { role: 'system', content: req.system },
-        ...req.messages.map((m) => ({ role: m.role, content: m.content })),
-      ],
+      temperature,
+      max_tokens: maxTokens,
+      messages: baseMessages,
     });
 
     const text = completion.choices?.[0]?.message?.content?.trim() || '';
     return { text, provider: 'openai', model };
   } catch (err) {
+    const anyErr = err as any;
+    const apiMsg: string =
+      anyErr?.error?.message || anyErr?.message || '';
+    const lower = apiMsg.toLowerCase();
+
+    // Se o erro foi por parâmetro (ex.: modelos novos exigem max_completion_tokens),
+    // tenta de novo sem max_tokens.
+    if (
+      anyErr?.status === 400 &&
+      (lower.includes('max_tokens') ||
+        lower.includes('max_completion_tokens') ||
+        lower.includes('unsupported parameter'))
+    ) {
+      try {
+        const retry = await client.chat.completions.create({
+          model,
+          temperature,
+          messages: baseMessages,
+        } as any);
+        const text = retry.choices?.[0]?.message?.content?.trim() || '';
+        return { text, provider: 'openai', model };
+      } catch (retryErr) {
+        throw classifyError(retryErr, 'openai');
+      }
+    }
+
     throw classifyError(err, 'openai');
   }
 }

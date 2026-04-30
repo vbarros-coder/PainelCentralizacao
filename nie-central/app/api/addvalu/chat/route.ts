@@ -141,12 +141,16 @@ export async function POST(req: NextRequest) {
       // Log seguro sem expor a key
       console.error(
         `[ADDVALU /api/chat] LLM ${err.code} | provider=${info.provider} model=${info.model} ` +
-          `status=${err.status ?? 'n/a'} msg=${(err.providerMessage || err.message || '').slice(0, 300)}`
+          `status=${err.status ?? 'n/a'} msg=${(err.providerMessage || err.message || '').slice(0, 500)}`
       );
+      // providerMessage é mensagem de erro da OpenAI/Anthropic - não contém a API key,
+      // só descreve o que a API reclamou (ex.: "Unsupported parameter...", "model not found")
+      const safeProviderMsg = (err.providerMessage || err.message || '').slice(0, 300);
       return NextResponse.json({
         text: null,
         llmError: err.code,
         llmErrorStatus: err.status ?? null,
+        llmErrorMessage: safeProviderMsg,
         provider: info.provider,
         model: info.model,
       });
@@ -157,6 +161,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       text: null,
       llmError: 'unknown_error',
+      llmErrorMessage: msg.slice(0, 300),
       provider: info.provider,
       model: info.model,
     });
