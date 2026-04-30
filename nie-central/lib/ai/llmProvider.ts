@@ -57,16 +57,17 @@ export class LLMError extends Error {
 }
 
 function resolveConfig() {
-  const provider = (process.env.LLM_PROVIDER || 'openai').toLowerCase();
-  const apiKey = process.env.LLM_API_KEY || '';
+  const provider = (process.env.LLM_PROVIDER || 'openai').trim().toLowerCase();
+  const apiKey = (process.env.LLM_API_KEY || '').trim();
+  const rawModel = (process.env.LLM_MODEL || '').trim();
   const model =
-    process.env.LLM_MODEL ||
+    rawModel ||
     (provider === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini');
   return { provider, apiKey, model };
 }
 
 export function isLLMConfigured(): boolean {
-  return Boolean(process.env.LLM_API_KEY);
+  return Boolean((process.env.LLM_API_KEY || '').trim());
 }
 
 export function getLLMInfo() {
@@ -76,6 +77,7 @@ export function getLLMInfo() {
     provider,
     model,
     apiKeyLength: apiKey ? apiKey.length : 0,
+    apiKeyPrefix: apiKey ? apiKey.slice(0, 7) : '',
   };
 }
 
@@ -118,6 +120,8 @@ function classifyError(err: unknown, provider: string): LLMError {
   }
   if (
     status === 404 ||
+    lower.includes('invalid model') ||
+    lower.includes('model_not_found') ||
     (lower.includes('model') && (lower.includes('not found') || lower.includes('does not exist')))
   ) {
     return new LLMError(
