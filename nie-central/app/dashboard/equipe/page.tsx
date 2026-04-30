@@ -19,8 +19,9 @@ function EquipeContent() {
   const { getAllUsers } = useAuth();
   
   // Usar getAllUsers para pegar os usuários reais (incluindo fotos atualizadas e status)
+  // Filtrar apenas usuários ativos (não pendentes, não removidos)
   const users = useMemo(() => {
-    return getAllUsers();
+    return getAllUsers().filter(u => u.status === 'ativo');
   }, [getAllUsers]);
 
   return (

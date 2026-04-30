@@ -86,6 +86,9 @@ export function UserManagementPanel() {
   // Filtragem de usuários
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
+      // Não mostrar usuários removidos (rejeitados) na lista principal
+      if (u.status === 'removido') return false;
+      
       const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) || 
                            u.email.toLowerCase().includes(search.toLowerCase());
       const matchesRole = roleFilter === 'all' || u.role === roleFilter;
