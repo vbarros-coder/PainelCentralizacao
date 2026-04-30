@@ -657,7 +657,7 @@ export const MOCK_PROJECTS: Project[] = [
     diretoria: 'Responsabilidade Civil Geral (RCG)',
     responsavel: 'William Fernandez',
     link: '#',
-    destaque: true,
+    destaque: false,
     favorito: false,
 
     dataInicio: `${CURRENT_YEAR}-04-01`,

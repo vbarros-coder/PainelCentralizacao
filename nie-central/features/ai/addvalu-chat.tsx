@@ -31,16 +31,17 @@ export function AddvaluChat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Saudação inicial customizada via IA
+  // Mensagem de boas-vindas ao abrir o chat
   useEffect(() => {
     if (messages.length === 0 && user) {
-      const initChat = async () => {
-        setIsLoading(true);
-        const response = await aiService.getResponse('olá', user);
-        setMessages([response]);
-        setIsLoading(false);
+      const firstName = user.name?.split(' ')[0] || '';
+      const welcome: ChatMessage = {
+        id: 'welcome',
+        role: 'assistant',
+        content: `Olá${firstName ? `, ${firstName}` : ''}! Sou a **ADDVALU**, assistente corporativa da Addvalora.\n\nComo posso ajudar você hoje? Posso consultar projetos, painéis, indicadores ou ajudar com textos, e-mails e análises.`,
+        timestamp: Date.now(),
       };
-      initChat();
+      setMessages([welcome]);
     }
   }, [user]);
 
