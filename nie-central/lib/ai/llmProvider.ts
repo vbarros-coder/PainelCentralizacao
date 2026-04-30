@@ -97,7 +97,22 @@ function classifyError(err: unknown, provider: string): LLMError {
     anyErr?.response?.data?.error?.message ??
     anyErr?.response?.body?.error?.message;
 
-  const rawMsg: string = apiMessage || anyErr?.message || String(err);
+  // Fallback: se nada estiver preenchido, serializa o que der
+  let serializedFallback = '';
+  if (!apiMessage && !anyErr?.message) {
+    try {
+      serializedFallback = JSON.stringify({
+        status: anyErr?.status,
+        code: anyErr?.code,
+        type: anyErr?.type,
+        error: anyErr?.error,
+      });
+    } catch {
+      serializedFallback = String(err);
+    }
+  }
+
+  const rawMsg: string = apiMessage || anyErr?.message || serializedFallback || String(err);
 
   const errType: string | undefined =
     anyErr?.error?.type ?? anyErr?.type ?? anyErr?.code ?? anyErr?.error?.code;
@@ -111,7 +126,8 @@ function classifyError(err: unknown, provider: string): LLMError {
     status === 402 ||
     lower.includes('billing') ||
     lower.includes('quota') ||
-    lower.includes('insufficient_quota')
+    lower.includes('insufficient_quota') ||
+    lower.includes('exceeded your current quota')
   ) {
     return new LLMError('billing_error', 'Problema de billing/cota no provider.', status, rawMsg);
   }
@@ -122,11 +138,12 @@ function classifyError(err: unknown, provider: string): LLMError {
     status === 404 ||
     lower.includes('invalid model') ||
     lower.includes('model_not_found') ||
+    lower.includes('does not have access to model') ||
     (lower.includes('model') && (lower.includes('not found') || lower.includes('does not exist')))
   ) {
     return new LLMError(
       'model_not_found',
-      'Modelo configurado não existe ou indisponível.',
+      'Modelo configurado não existe ou não está habilitado para o projeto.',
       status,
       rawMsg
     );
@@ -146,7 +163,7 @@ function classifyError(err: unknown, provider: string): LLMError {
   if (status === 400) {
     return new LLMError(
       'provider_error',
-      `Requisição rejeitada pelo ${provider} (400): ${rawMsg}`,
+      `Requisição rejeitada pelo ${provider} (400): ${rawMsg || '[sem mensagem do provider]'}`,
       status,
       rawMsg
     );
