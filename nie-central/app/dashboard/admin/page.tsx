@@ -60,7 +60,8 @@ function AdminContent() {
 
   // Admin Cards
   const adminItems = useMemo(() => {
-    const newUsersCount = allUsers.filter(u => u.isNew).length;
+    // Contar apenas usuários pendentes como "novos" (não removidos, não ativos)
+    const newUsersCount = allUsers.filter(u => u.status === 'pendente').length;
     
     const items = [
       { 
